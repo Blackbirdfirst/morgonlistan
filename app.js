@@ -1,7 +1,5 @@
 // ---------- Storage ----------
 
-const STORAGE_KEY = "morningChecklistState";
-
 const DEFAULT_TASKS = [
   { id: "t1", name: "Frukost", emoji: "🍳" },
   { id: "t2", name: "Kläder", emoji: "👕" },
@@ -50,32 +48,149 @@ const MANUAL_ADJUSTMENT_TASK_ID = "manual-adjustment";
 const SESSION_REWARD_IDS = { morning: "session-reward-morning", evening: "session-reward-evening" };
 const MAX_DISPLAY_ICONS = 14;
 
-function loadState() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (raw) {
-    try {
-      const parsed = JSON.parse(raw);
-      if (!parsed.currencySymbol) parsed.currencySymbol = DEFAULT_CURRENCY;
-      if (parsed.rewardPerSession === undefined) parsed.rewardPerSession = parsed.rewardPerTask ?? parsed.kronaPerTask ?? 1;
-      if (!parsed.eveningTasks) parsed.eveningTasks = DEFAULT_EVENING_TASKS.slice();
-      return parsed;
-    } catch (e) { /* fall through */ }
-  }
+function defaultState() {
   return {
     kids: [],
     tasks: DEFAULT_TASKS.slice(),
     eveningTasks: DEFAULT_EVENING_TASKS.slice(),
     rewardPerSession: 1,
     currencySymbol: DEFAULT_CURRENCY,
-    completions: [], // { kidId, taskId, date, amount }
+    completions: [], // { kidId, taskId, date, amount, timestamp }
   };
 }
 
-function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+// Fills in defaults for a state object loaded from the backend — handles a
+// brand-new family (empty state) and older records missing newer fields.
+function normalizeState(parsed) {
+  if (!parsed || Object.keys(parsed).length === 0) return defaultState();
+  if (!parsed.currencySymbol) parsed.currencySymbol = DEFAULT_CURRENCY;
+  if (parsed.rewardPerSession === undefined) parsed.rewardPerSession = parsed.rewardPerTask ?? parsed.kronaPerTask ?? 1;
+  if (!parsed.eveningTasks) parsed.eveningTasks = DEFAULT_EVENING_TASKS.slice();
+  if (!parsed.kids) parsed.kids = [];
+  if (!parsed.tasks) parsed.tasks = DEFAULT_TASKS.slice();
+  if (!parsed.completions) parsed.completions = [];
+  return parsed;
 }
 
-let state = loadState();
+let state = null;
+
+// ---------- Auth & sync (Supabase) ----------
+// Each signed-in family has one row in the `families` table (see
+// supabase/schema.sql), keyed by their auth user id. `state` above holds a
+// local copy while signed in; saveState() pushes it to that row.
+
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let currentUserId = null;
+
+async function fetchFamilyState(userId) {
+  const { data, error } = await supabaseClient
+    .from("families")
+    .select("state")
+    .eq("id", userId)
+    .single();
+
+  if (data) return normalizeState(data.state);
+
+  // No row yet — normally the signup trigger creates one, but self-heal here
+  // too (e.g. a user created before the trigger existed) so a missing row
+  // never means silently unsaved progress.
+  if (error) console.warn("Ingen familjerad hittades, skapar en:", error.message);
+  const fresh = defaultState();
+  const { error: insertError } = await supabaseClient
+    .from("families")
+    .insert({ id: userId, state: fresh });
+  if (insertError) console.error("Kunde inte skapa familjerad:", insertError);
+  return fresh;
+}
+
+async function saveState() {
+  if (!currentUserId) return;
+  const { error } = await supabaseClient
+    .from("families")
+    .update({ state, updated_at: new Date().toISOString() })
+    .eq("id", currentUserId);
+  if (error) console.error("Kunde inte spara:", error);
+}
+
+async function bootstrapApp(userId) {
+  currentUserId = userId;
+  state = await fetchFamilyState(userId);
+  render();
+}
+
+function showLoginScreen() {
+  app.innerHTML = "";
+  app.appendChild(renderLoginScreen());
+}
+
+function renderLoginScreen() {
+  const wrap = el("div", "screen onboard-wrap");
+  wrap.innerHTML = `
+    <div class="big-emoji">🍬</div>
+    <div class="home-title">Morgonlistan</div>
+    <div>Ange din e-postadress för att logga in eller skapa ett konto.</div>
+  `;
+
+  const field = el("div", "field");
+  field.innerHTML = `<label>E-post</label>`;
+  const emailInput = document.createElement("input");
+  emailInput.type = "email";
+  emailInput.placeholder = "din@epost.se";
+  emailInput.autocomplete = "email";
+  field.appendChild(emailInput);
+  wrap.appendChild(field);
+
+  const errorEl = el("div", "field-error", "Något gick fel. Försök igen.");
+  errorEl.style.display = "none";
+  wrap.appendChild(errorEl);
+
+  const btn = el("button", "primary-btn", "Skicka inloggningslänk");
+  btn.onclick = async () => {
+    const email = emailInput.value.trim();
+    if (!email) { emailInput.focus(); return; }
+    errorEl.style.display = "none";
+    btn.disabled = true;
+    btn.textContent = "Skickar...";
+    const { error } = await supabaseClient.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: window.location.href },
+    });
+    if (error) {
+      errorEl.style.display = "block";
+      btn.disabled = false;
+      btn.textContent = "Skicka inloggningslänk";
+      return;
+    }
+    wrap.innerHTML = `
+      <div class="big-emoji">📬</div>
+      <div class="home-title">Kolla din inkorg!</div>
+      <div>Vi har skickat en inloggningslänk till ${escapeHtml(email)}.</div>
+    `;
+  };
+  wrap.appendChild(btn);
+
+  setTimeout(() => emailInput.focus(), 50);
+  return wrap;
+}
+
+async function initAuth() {
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (session) {
+    await bootstrapApp(session.user.id);
+  } else {
+    showLoginScreen();
+  }
+
+  supabaseClient.auth.onAuthStateChange((event, session) => {
+    if (event === "SIGNED_IN" && session && session.user.id !== currentUserId) {
+      bootstrapApp(session.user.id);
+    } else if (event === "SIGNED_OUT") {
+      currentUserId = null;
+      state = null;
+      showLoginScreen();
+    }
+  });
+}
 
 // ---------- Date helpers ----------
 
@@ -630,6 +745,14 @@ function renderParent() {
   settingsSection.appendChild(stepper);
   body.appendChild(settingsSection);
 
+  // Account section
+  const accountSection = el("div");
+  accountSection.appendChild(el("div", "section-title", "Konto"));
+  const signOutBtn = el("button", "add-row-btn", "Logga ut");
+  signOutBtn.onclick = () => supabaseClient.auth.signOut();
+  accountSection.appendChild(signOutBtn);
+  body.appendChild(accountSection);
+
   screen.appendChild(body);
   return screen;
 }
@@ -900,4 +1023,4 @@ function escapeHtml(str) {
 
 // ---------- Init ----------
 
-render();
+initAuth();
