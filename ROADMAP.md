@@ -110,7 +110,7 @@ Not for now — ideas parked until the core app is solid.
 - [x] Real accounts + a Supabase backend (one family per account, isolated by row-level security) — see `CLAUDE.md`
 - [x] Hosting moved off the Claude Artifact — live on GitHub Pages (`https://blackbirdfirst.github.io/morgonlistan/`)
 - [ ] Today, sharing access within a family means literally sharing one login email (e.g. both parents use the same address). A proper multi-user-per-family model — separate logins for each parent, linked to the same family's data via an invite step — is deferred until the shared-login approach actually becomes annoying in practice
-- [ ] No offline handling yet — a dropped connection mid-use silently fails to save. **Prioritized now** — see §7, this is one of the two stability gaps being fixed before the native app migration
+- [x] Offline/save resilience — retry with backoff, localStorage cache, flush on reload and on reconnect. See `CLAUDE.md`
 - [ ] Email deliverability — Supabase's shared free-tier email sender has a low rate limit (hit during our own testing). **Prioritized now**, see §7 — needs custom SMTP (e.g. Resend, or a personal account via app password) before wider sharing
 
 **Collecting parent emails (waitlist / updates)**
@@ -135,7 +135,8 @@ Not for now — ideas parked until the core app is solid.
 **Goal:** a real installable app, not just an "Add to Home Screen" web app.
 
 Agreed plan (2026-09-04):
-- [ ] Fix the two stability gaps first (offline/save resilience, email deliverability — see §5) since the native app hits the same backend and would inherit the same issues
+- [x] Offline/save resilience — done, see §5
+- [ ] Email deliverability (custom SMTP via Resend) — in progress, see §5
 - [ ] Write a short, plain-language privacy policy and settle what data is actually collected — likely required for App Store review given the app's audience, not just a nice-to-have
 - [ ] Parent creates an Apple Developer account ($99/year) — their account, their purchase
 - [ ] Wrap the app with Capacitor (introduces Node.js/npm and a real build step for the first time — a deliberate, scoped exception to the "no build tools" rule elsewhere in this project)

@@ -51,7 +51,7 @@ The whole app state lives in that row's single `state` jsonb column — same sha
 
 `timestamp` is used for precise weekly-boundary math; older records without it fall back to noon of `date`.
 
-**Current known gap**: no offline handling — `saveState()` writes straight to Supabase with no local queue/retry, so a dropped connection mid-use will silently fail to save. Fine for now, worth revisiting if it becomes a real problem.
+**Offline resilience**: `saveState()` stashes the change in `localStorage` (`PENDING_SAVE_KEY`) before writing, retries with backoff (3 attempts) on failure, and leaves the change cached if all retries fail. A pending change is flushed automatically on the next app load (`bootstrapApp`) and as soon as the browser reports connectivity again (`window`'s `online` event) — a dropped connection mid-use no longer silently loses a kid's progress. If reopening the app while still offline, the cached pending state is shown directly rather than an outdated (or empty) fetch.
 
 **Shared family access**: today, "sharing" a family (e.g. both parents) means literally sharing one login email — there's no concept of multiple auth users linked to one family row yet. That's a deliberate v1 simplification (see `ROADMAP.md` if a proper multi-user-per-family model is ever needed).
 

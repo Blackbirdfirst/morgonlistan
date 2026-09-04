@@ -104,20 +104,87 @@ async function fetchFamilyState(userId) {
   return fresh;
 }
 
+// Offline/flaky-connection resilience: before attempting the network write,
+// stash the change in localStorage. If the write fails (dropped WiFi mid
+// morning rush is the real scenario here), retry with backoff; if all
+// retries fail, the change stays cached and gets flushed on next load or as
+// soon as the browser reports connectivity again — so a network hiccup
+// never silently loses a kid's progress.
+const PENDING_SAVE_KEY = "morgonlistanPendingSave";
+
 async function saveState() {
   if (!currentUserId) return;
+  localStorage.setItem(PENDING_SAVE_KEY, JSON.stringify({ userId: currentUserId, state }));
+
+  const delays = [500, 1500, 3000];
+  for (let attempt = 0; attempt <= delays.length; attempt++) {
+    const { error } = await supabaseClient
+      .from("families")
+      .update({ state, updated_at: new Date().toISOString() })
+      .eq("id", currentUserId);
+    if (!error) {
+      localStorage.removeItem(PENDING_SAVE_KEY);
+      return;
+    }
+    console.warn(`Kunde inte spara (försök ${attempt + 1}):`, error.message);
+    if (attempt < delays.length) await new Promise(r => setTimeout(r, delays[attempt]));
+  }
+  console.error("Kunde inte spara efter flera försök — ändringen är sparad lokalt och skickas när anslutningen är tillbaka.");
+}
+
+// Pushes a locally-cached change from a previous session/attempt that never
+// made it to the server. Returns true if there was nothing pending, or the
+// pending change was successfully flushed.
+async function flushPendingSave() {
+  const raw = localStorage.getItem(PENDING_SAVE_KEY);
+  if (!raw) return true;
+  let pending;
+  try {
+    pending = JSON.parse(raw);
+  } catch (e) {
+    localStorage.removeItem(PENDING_SAVE_KEY);
+    return true;
+  }
+  if (pending.userId !== currentUserId) {
+    localStorage.removeItem(PENDING_SAVE_KEY); // belongs to a different account
+    return true;
+  }
   const { error } = await supabaseClient
     .from("families")
-    .update({ state, updated_at: new Date().toISOString() })
+    .update({ state: pending.state, updated_at: new Date().toISOString() })
     .eq("id", currentUserId);
-  if (error) console.error("Kunde inte spara:", error);
+  if (error) {
+    console.warn("Kunde fortfarande inte skicka sparad ändring:", error.message);
+    return false;
+  }
+  localStorage.removeItem(PENDING_SAVE_KEY);
+  return true;
 }
 
 async function bootstrapApp(userId) {
   currentUserId = userId;
+
+  const raw = localStorage.getItem(PENDING_SAVE_KEY);
+  if (raw) {
+    const flushed = await flushPendingSave();
+    if (!flushed) {
+      // Still offline — show the cached local state rather than an
+      // out-of-date fetch, and keep retrying in the background.
+      try {
+        state = normalizeState(JSON.parse(raw).state);
+        render();
+        return;
+      } catch (e) { /* fall through to a normal fetch */ }
+    }
+  }
+
   state = await fetchFamilyState(userId);
   render();
 }
+
+window.addEventListener("online", () => {
+  if (currentUserId) flushPendingSave();
+});
 
 function showLoginScreen() {
   app.innerHTML = "";
