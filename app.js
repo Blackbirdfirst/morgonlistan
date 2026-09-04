@@ -9,6 +9,7 @@ const DEFAULT_TASKS = [
 ];
 
 const DEFAULT_EVENING_TASKS = [
+  { id: "e0", name: "Plocka undan leksaker", emoji: "🧸" },
   { id: "e1", name: "Duscha", emoji: "🚿" },
   { id: "e2", name: "Tandborstning", emoji: "🪥" },
   { id: "e3", name: "Toalett", emoji: "🚽" },

@@ -14,6 +14,7 @@ Morgonlistan — a morning/evening checklist app for kids. Plain vanilla HTML/CS
 - `supabase/schema.sql` — the database schema (`families` table, RLS policies, auto-create-row trigger); run once per Supabase project via the SQL Editor
 - `serve.py` — local dev server
 - `.claude/launch.json` — dev server config for the Browser pane preview tool
+- `morgonlistan-brand-spec.md` — the queued visual identity spec (see `ROADMAP.md` §4); not yet implemented
 
 ## Running locally
 
