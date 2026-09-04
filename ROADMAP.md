@@ -127,7 +127,7 @@ Not for now — ideas parked until the core app is solid.
 
 ## 6. Task list content
 
-- [x] Add "Plocka undan leksaker" 🧸 (put away toys) to the evening default list, at the top — ships as a default task for new installs
+- [x] Add "Plocka undan" 🧸 (put away toys) to the evening default list, at the top — ships as a default task for new installs; kept short to match the other task names' length
 - [ ] Consider similar quick default-list content tweaks as they come up (this section is the catch-all for small task-list changes, not a big feature)
 
 ## 7. Native App Store distribution

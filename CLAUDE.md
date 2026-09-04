@@ -67,8 +67,10 @@ The whole app state lives in that row's single `state` jsonb column — same sha
 
 ## Public hosting
 
-**Being replaced.** The app was previously published as a single self-contained Claude Artifact (all CSS/JS inlined into one HTML file). That's no longer sufficient now that there's real backend data — an Artifact can hold the app's *code*, but this app now also needs `config.js` (not safe/sensible to bake into a shareable public Artifact) and benefits from a real URL. A proper static host (e.g. Vercel, Netlify, GitHub Pages, Cloudflare Pages) is the next step — not yet decided or set up.
+Live on **GitHub Pages**: `https://blackbirdfirst.github.io/morgonlistan/`. Deploys automatically from a push to `main` (Settings → Pages → Deploy from a branch → `main` / root) — no separate build/deploy step. `config.js` is committed (see Files above) since GitHub Pages serves the repo as-is with no build step to inject it otherwise; this is safe because it only holds the Supabase publishable key, not a secret.
+
+Superseded the earlier Claude Artifact approach (single self-contained HTML file) and the local-only `serve.py` LAN setup — those still exist for local dev (see "Running locally"), but the GitHub Pages URL is the one to actually share with other families.
 
 ## Git
 
-Local repo, `main` branch. Git identity is set locally for this repo only (Bjorn Jansson / bjornjansson80@gmail.com) — not the machine's global config. No remote configured yet.
+Local repo, `main` branch, pushed to `origin` — `git@github.com:Blackbirdfirst/morgonlistan.git` (SSH; a dedicated key at `~/.ssh/id_ed25519_morgonlistan`, configured in `~/.ssh/config` for `github.com`). Git identity is set locally for this repo only (Bjorn Jansson / bjornjansson80@gmail.com) — not the machine's global config.
