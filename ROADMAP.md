@@ -158,3 +158,16 @@ Deliberately **not** blocking this on the full visual identity system (§4) — 
 - [ ] Reschedule automatically when a parent changes either time
 - [ ] One shared-device reminder rather than per-kid, matching the single-device household model elsewhere in the app
 - [ ] Handle notification permission denied gracefully — the reminder is a nice-to-have, the app must work fully without it (same principle as §1's notification handling)
+
+## 9. Internationalization (Swedish → English → Spanish)
+
+**Goal:** Swedish ships first (already done); English and Spanish follow shortly after as a near-term plan, not someday-maybe.
+
+> Deliberately **not** bundled into the native App Store migration (§7) — ship v1 native in Swedish only, matching what exists today, then add languages as a fast-follow update once the translation system below is actually built. Doing both at once risks neither landing cleanly.
+
+- [ ] Extract all hardcoded UI text (buttons, labels, errors, Parent Mode — currently inline Swedish strings throughout `app.js`) into a translation dictionary with a lookup function used everywhere, instead of literal strings
+- [ ] Decide where the language setting lives — likely a per-family setting alongside currency/reward settings (`state`), not a per-browser preference, since a household shares one device and one language
+- [ ] Separate default task lists per language (today's Swedish "Frukost, Kläder..." defaults need English/Spanish equivalents for new families choosing those languages)
+- [ ] Translate the privacy policy (`privacy.html`) into each supported language
+- [ ] **Known wrinkle**: Supabase's built-in magic-link email template is one fixed language for the whole project, not per-recipient. Properly localizing the login email means sending it ourselves via Resend directly instead of through Supabase's template — meaningfully more work than the rest of this list, worth scoping separately rather than assumed-included
+- [ ] Decide how a family picks/changes their language (first-run choice? Parent Mode setting? Both?)
