@@ -57,6 +57,8 @@ The whole app state lives in that row's single `state` jsonb column — same sha
 
 **Shared family access**: today, "sharing" a family (e.g. both parents) means literally sharing one login email — there's no concept of multiple auth users linked to one family row yet. That's a deliberate v1 simplification (see `ROADMAP.md` if a proper multi-user-per-family model is ever needed).
 
+**Account deletion** (Parent mode → Konto → Radera konto, `openDeleteAccountModal()` in `app.js`): requires typing "RADERA" to confirm, then calls the `delete-account` Edge Function (`supabase/functions/delete-account/index.ts`). That function deletes the `auth.users` row via the Admin API using the service role key (only available server-side); the `families` row disappears automatically via its `on delete cascade` FK — no separate data-deletion step needed. Added to satisfy Apple App Store Guideline 5.1.1(v) (apps with account creation must offer in-app account deletion, not just a support contact). Deploy/update this function via the Supabase dashboard's Edge Functions editor (no CLI installed on this machine) — paste the file's contents in as a new function named `delete-account`.
+
 ## Key architectural decisions
 
 - **No frameworks, no build step, by design** — matches the user's preference for something simple to inspect and edit without heavy tooling.

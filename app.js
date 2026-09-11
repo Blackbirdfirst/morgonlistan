@@ -819,6 +819,10 @@ function renderParent() {
   const signOutBtn = el("button", "add-row-btn", "Logga ut");
   signOutBtn.onclick = () => supabaseClient.auth.signOut();
   accountSection.appendChild(signOutBtn);
+  const deleteAccountBtn = el("button", "danger-btn", "Radera konto");
+  deleteAccountBtn.style.marginTop = "10px";
+  deleteAccountBtn.onclick = () => openDeleteAccountModal();
+  accountSection.appendChild(deleteAccountBtn);
   body.appendChild(accountSection);
 
   screen.appendChild(body);
@@ -920,6 +924,53 @@ function attachDragReorder(handle, row, tasks) {
 
   handle.addEventListener("pointerup", finish);
   handle.addEventListener("pointercancel", finish);
+}
+
+function openDeleteAccountModal() {
+  openModal((sheet, close) => {
+    sheet.appendChild(el("div", "modal-title", "Radera konto"));
+    sheet.appendChild(el("div", "modal-text", "Det här raderar ditt konto och all tillhörande data permanent — barn, uppgifter och sparad status. Det går inte att ångra."));
+
+    const field = el("div", "field");
+    field.innerHTML = `<label>Skriv RADERA för att bekräfta</label>`;
+    const confirmInput = document.createElement("input");
+    confirmInput.type = "text";
+    field.appendChild(confirmInput);
+    sheet.appendChild(field);
+
+    const errorMsg = el("div", "field-error", "Kunde inte radera kontot just nu. Försök igen om en stund.");
+    errorMsg.style.display = "none";
+    sheet.appendChild(errorMsg);
+
+    const actions = el("div", "modal-actions");
+    const cancelBtn = el("button", "secondary-btn", "Avbryt");
+    cancelBtn.onclick = close;
+    const deleteBtn = el("button", "danger-btn", "Radera konto");
+    deleteBtn.disabled = true;
+    confirmInput.oninput = () => {
+      deleteBtn.disabled = confirmInput.value.trim().toUpperCase() !== "RADERA";
+    };
+    deleteBtn.onclick = async () => {
+      deleteBtn.disabled = true;
+      deleteBtn.textContent = "Raderar…";
+      errorMsg.style.display = "none";
+      const { error } = await supabaseClient.functions.invoke("delete-account");
+      if (error) {
+        console.error("Kunde inte radera konto:", error.message);
+        errorMsg.style.display = "block";
+        deleteBtn.disabled = false;
+        deleteBtn.textContent = "Radera konto";
+        return;
+      }
+      localStorage.removeItem(PENDING_SAVE_KEY);
+      await supabaseClient.auth.signOut();
+      window.location.reload();
+    };
+    actions.appendChild(cancelBtn);
+    actions.appendChild(deleteBtn);
+    sheet.appendChild(actions);
+    setTimeout(() => confirmInput.focus(), 50);
+  });
 }
 
 function openModal(contentBuilder) {

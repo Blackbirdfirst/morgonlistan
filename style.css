@@ -595,7 +595,7 @@ button {
   margin-top: 8px;
 }
 
-.modal-actions .primary-btn, .modal-actions .secondary-btn {
+.modal-actions .primary-btn, .modal-actions .secondary-btn, .modal-actions .danger-btn {
   flex: 1;
   text-align: center;
   padding: 14px;
@@ -607,6 +607,20 @@ button {
 .secondary-btn {
   background: #E9ECEF;
   color: #495057;
+}
+
+.danger-btn {
+  width: 100%;
+  background: #FFF0F0;
+  color: #E03131;
+  font-weight: 700;
+  font-size: 16px;
+  padding: 16px;
+  border-radius: 18px;
+}
+
+.danger-btn:disabled {
+  opacity: 0.5;
 }
 
 .onboard-wrap {
