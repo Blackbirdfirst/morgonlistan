@@ -31,7 +31,7 @@ Then open `http://<mac-lan-ip>:8000` on a phone on the same WiFi (find the IP wi
 
 Signing in is passwordless (magic-link email via Supabase Auth — see `renderLoginScreen()` / `initAuth()` in `app.js`). Each signed-in family gets exactly one row in the `families` table, auto-created by a Postgres trigger the moment they first sign up (`supabase/schema.sql`). Row Level Security means a user can only ever read/write their own row.
 
-**Email sending**: magic-link emails go out via custom SMTP (Supabase Project Settings → Authentication → SMTP Settings), not Supabase's shared default sender — that shared sender has a low rate limit that was hit during our own testing. Configured with **Resend**, sending from the verified domain `biom39t.com` (DKIM via a `resend._domainkey` TXT record, DMARC via `_dmarc` TXT, plus `rsend`/`send` CNAMEs pointing at Resend's sending infrastructure). If email deliverability ever breaks, check Resend's dashboard and that domain's DNS records first.
+**Email sending**: magic-link emails go out via custom SMTP (Supabase Project Settings → Authentication → SMTP Settings), not Supabase's shared default sender — that shared sender has a low rate limit that was hit during our own testing. Configured with **Resend**, sending from the verified domain `morninglist.app` (DKIM via a `resend._domainkey` TXT record, DMARC via `_dmarc` TXT, plus `rsend`/`send` CNAMEs pointing at Resend's sending infrastructure). If email deliverability ever breaks, check Resend's dashboard and that domain's DNS records first.
 
 The whole app state lives in that row's single `state` jsonb column — same shape as the old localStorage blob, which kept the migration mostly to "swap the read/write layer," not a redesign:
 
@@ -69,9 +69,9 @@ The whole app state lives in that row's single `state` jsonb column — same sha
 
 ## Public hosting
 
-Live on **GitHub Pages**: `https://blackbirdfirst.github.io/morgonlistan/`. Deploys automatically from a push to `main` (Settings → Pages → Deploy from a branch → `main` / root) — no separate build/deploy step. `config.js` is committed (see Files above) since GitHub Pages serves the repo as-is with no build step to inject it otherwise; this is safe because it only holds the Supabase publishable key, not a secret.
+Live on **GitHub Pages**, served under the custom domain **`morninglist.app`** (`CNAME` file in repo root). The original `https://blackbirdfirst.github.io/morgonlistan/` URL now auto-redirects there. Deploys automatically from a push to `main` (Settings → Pages → Deploy from a branch → `main` / root) — no separate build/deploy step. `config.js` is committed (see Files above) since GitHub Pages serves the repo as-is with no build step to inject it otherwise; this is safe because it only holds the Supabase publishable key, not a secret.
 
-Superseded the earlier Claude Artifact approach (single self-contained HTML file) and the local-only `serve.py` LAN setup — those still exist for local dev (see "Running locally"), but the GitHub Pages URL is the one to actually share with other families.
+Superseded the earlier Claude Artifact approach (single self-contained HTML file) and the local-only `serve.py` LAN setup — those still exist for local dev (see "Running locally"), but `https://morninglist.app` is the one to actually share with other families.
 
 ## Git
 
