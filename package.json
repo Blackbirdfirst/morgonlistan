@@ -1,0 +1,29 @@
+{
+  "name": "morgonlistan",
+  "version": "1.0.0",
+  "description": "The Morning List / Morgonlistan — a morning/evening checklist app for kids",
+  "private": true,
+  "main": "app.js",
+  "scripts": {
+    "cap:sync": "cp index.html style.css app.js config.js www/ && npx cap sync ios"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Blackbirdfirst/morgonlistan.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Blackbirdfirst/morgonlistan/issues"
+  },
+  "homepage": "https://github.com/Blackbirdfirst/morgonlistan#readme",
+  "dependencies": {
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/ios": "^8.5.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.2"
+  }
+}

@@ -15,6 +15,9 @@ Morgonlistan — a morning/evening checklist app for kids. Plain vanilla HTML/CS
 - `serve.py` — local dev server
 - `.claude/launch.json` — dev server config for the Browser pane preview tool
 - `morgonlistan-brand-spec.md` — the queued visual identity spec (see `ROADMAP.md` §4); not yet implemented
+- `ios/` — the native iOS wrapper (Capacitor); see "Native iOS app" below
+- `www/` — **gitignored**, a generated copy of the four web files for Capacitor to bundle; never edit directly, see "Native iOS app"
+- `capacitor.config.json`, `package.json` — Capacitor/npm config, added solely to support the iOS wrapper (see "Native iOS app")
 
 ## Running locally
 
@@ -78,3 +81,13 @@ Superseded the earlier Claude Artifact approach (single self-contained HTML file
 ## Git
 
 Local repo, `main` branch, pushed to `origin` — `git@github.com:Blackbirdfirst/morgonlistan.git` (SSH; a dedicated key at `~/.ssh/id_ed25519_morgonlistan`, configured in `~/.ssh/config` for `github.com`). Git identity is set locally for this repo only (Bjorn Jansson / bjornjansson80@gmail.com) — not the machine's global config.
+
+## Native iOS app
+
+Wrapped with **Capacitor** (`app.morninglist.ios`, display name "The Morning List") — the one deliberate exception to "no build tools," scoped narrowly to just the native app packaging. The actual web app (`index.html`/`style.css`/`app.js`/`config.js`) is still zero-build and still what GitHub Pages serves directly; nothing about the live web app changed.
+
+Capacitor requires its bundled web assets in their own folder (`www/`), not the repo root, so **after editing any of the four web files, run `npm run cap:sync`** before testing/building the iOS app — this copies the current files into `www/` and syncs Capacitor's `ios/App/App/public`. This is the one place a "build step" exists, and it only matters for the native app; the live website needs no such step and keeps working exactly as before.
+
+Requires Node.js (installed via `nvm`, not Homebrew — this machine had neither) and full Xcode (not just Command Line Tools) to open/build/run. Uses Capacitor 8's default Swift Package Manager integration, **not CocoaPods** — this machine's system Ruby (2.6) is too old for modern CocoaPods, but that's a non-issue since no Podfile is generated.
+
+To open the Xcode project: `npx cap open ios`.
