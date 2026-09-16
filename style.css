@@ -13,9 +13,18 @@ html, body {
   overflow: hidden;
   overscroll-behavior: none;
   touch-action: manipulation;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: 'Karla', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background: #F5F6FA;
   color: #2B2D42;
+}
+
+/* Fraunces carries the brand's own voice (titles, kid names, dialog titles);
+   Karla (set globally above) carries everything the product itself is doing. */
+.home-title,
+.parent-header .title,
+.modal-title,
+.kid-name {
+  font-family: 'Fraunces', Georgia, serif;
 }
 
 #app {
@@ -56,7 +65,7 @@ button {
 
 .home-title {
   font-size: 19px;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .gear-btn {
@@ -148,7 +157,7 @@ button {
 
 .kid-name {
   font-size: 16px;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .dots {
@@ -233,13 +242,13 @@ button {
 }
 
 .reward-card.celebrating {
-  border: 3px solid var(--task-done-accent, #40C057);
+  border: 3px solid var(--celebration-accent, #F0654A);
 }
 
 .celebration-line1 {
   font-size: 16px;
   font-weight: 800;
-  color: var(--task-done-accent, #40C057);
+  color: var(--celebration-accent, #F0654A);
   margin-top: 2px;
 }
 
@@ -305,8 +314,8 @@ button {
 }
 
 .task-card.done .task-check {
-  background: var(--task-done-accent, #40C057);
-  border-color: var(--task-done-accent, #40C057);
+  background: var(--task-done-accent, #FFC93C);
+  border-color: var(--task-done-accent, #FFC93C);
   color: white;
 }
 
@@ -324,7 +333,7 @@ button {
 
 .parent-header .title {
   font-size: 20px;
-  font-weight: 800;
+  font-weight: 600;
   flex: 1;
 }
 
@@ -579,7 +588,7 @@ button {
 
 .modal-title {
   font-size: 22px;
-  font-weight: 800;
+  font-weight: 600;
   margin-bottom: 16px;
 }
 

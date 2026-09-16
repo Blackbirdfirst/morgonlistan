@@ -1,6 +1,7 @@
 // ---------- Storage ----------
 
 const DEFAULT_TASKS = [
+  { id: "t0", name: "Vakna", emoji: "🛌" },
   { id: "t1", name: "Frukost", emoji: "🍳" },
   { id: "t2", name: "Kläder", emoji: "👕" },
   { id: "t3", name: "Tänder & hår", emoji: "🦷" },
@@ -13,7 +14,7 @@ const DEFAULT_EVENING_TASKS = [
   { id: "e1", name: "Duscha", emoji: "🚿" },
   { id: "e2", name: "Tandborstning", emoji: "🪥" },
   { id: "e3", name: "Toalett", emoji: "🚽" },
-  { id: "e4", name: "Pyjamas", emoji: "🩱" },
+  { id: "e4", name: "Pyjamas", emoji: "🛌" },
   { id: "e5", name: "Sängen", emoji: "🛏️" },
 ];
 
@@ -21,17 +22,32 @@ const DEFAULT_EVENING_TASKS = [
 const EVENING_START_HOUR = 18;
 const MORNING_START_HOUR = 4;
 
-// A small curated palette. Every other color used on a kid's card (done-state,
-// checkmarks, celebration gradient) is derived from whichever of these is picked,
-// so the whole card always stays internally color-harmonized.
+// A muted hue wheel — same saturation/lightness throughout, only the hue
+// turns — so any subset a family ends up using always sits together
+// harmoniously. Each kid's done-state background tint is still derived from
+// whichever of these they pick (see deriveKidTheme); see brand-guide.md.
 const KID_COLORS = [
-  "#F0605A", // red
-  "#F58220", // orange
-  "#E0A400", // amber
-  "#3FAE58", // green
-  "#3D8BF2", // blue
-  "#8B5CF6", // purple
+  "#D9A6A0", // dusty rose
+  "#C98B6E", // clay
+  "#D4B483", // sand
+  "#B8B383", // olive mist
+  "#8FA888", // sage
+  "#7FA79C", // muted teal
+  "#9FC0C4", // powder blue
+  "#8CA3B8", // dusty blue
+  "#9A9DC4", // periwinkle
+  "#A79CC0", // lavender grey
+  "#A97C93", // dusty plum
+  "#C99AA6", // blush
 ];
+
+// Shared "splash" accents — not tied to any kid, deliberately designed to
+// read clearly against every colour above. Reserved for the moment
+// something is actually earned, not for a card's resting state.
+const SPLASH_COLORS = {
+  tick: "#FFC93C",   // sunshine — a single task checked off
+  reward: "#F0654A", // coral pop — a session fully completed
+};
 
 const TASK_EMOJIS = [
   "🍳","🥣","🥪","🧃","👕","👖","🧦","🩳",
@@ -298,9 +314,10 @@ function uid() {
 }
 
 // ---------- Color theme derivation ----------
-// Every kid picks one base color; everything else (done-state tint, checkmark
-// accent, celebration gradient) is derived from that same hue so it always
-// stays harmonized, instead of mixing in independent hardcoded colors.
+// Every kid picks one base color; the done-state background tint is derived
+// from that same hue so a card always stays visually "theirs." The checkmark
+// and celebration accents are deliberately NOT derived — they're the shared
+// SPLASH_COLORS, the one vivid, common note across every kid's card.
 
 function hexToRgb(hex) {
   const n = parseInt(hex.replace("#", ""), 16);
@@ -361,7 +378,8 @@ function deriveKidTheme(baseHex) {
   const shade = (sat, light) => rgbToHex(...hslToRgb(h, sat, light));
   return {
     doneBg: shade(Math.max(s * 0.5, 20), 93),
-    doneAccent: shade(Math.min(s + 8, 90), 42),
+    doneAccent: SPLASH_COLORS.tick,
+    celebrationAccent: SPLASH_COLORS.reward,
   };
 }
 
@@ -568,6 +586,7 @@ function renderKidPanel(kid, tasks, period = getCurrentPeriod()) {
   const theme = deriveKidTheme(panelColor);
   panel.style.setProperty("--task-done-bg", theme.doneBg);
   panel.style.setProperty("--task-done-accent", theme.doneAccent);
+  panel.style.setProperty("--celebration-accent", theme.celebrationAccent);
 
   const header = el("div", "panel-header");
   header.innerHTML = `

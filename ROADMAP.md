@@ -76,17 +76,15 @@ Living list — status: `[ ]` todo · `[~]` in progress · `[x]` done. Sections 
 
 **Goal:** a defined look that belongs to the app, instead of ad-hoc colours per screen.
 
-> Note: a derived-color system already exists (see "Color system" in `CLAUDE.md`) — kids pick from a curated 6-color palette and every other UI color is computed from that one hue via HSL. What's below is about formalizing that into a documented, tokenized system and extending it to typography, dark mode, and contrast — not starting from scratch.
+**Settled**: see `brand-guide.md` in the repo root — warm, playful, Scandinavian-minimal direction; Fraunces + Karla typefaces; a 12-color muted "kid base" wheel (`KID_COLORS`) plus a small shared "splash" accent set (`SPLASH_COLORS`) for checked-task/reward moments, replacing the old fully-derived-from-one-hue accent system. Supersedes `morgonlistan-brand-spec.md` (removed), which was written under the earlier candy-jar direction. Design work for this project happens directly in Claude Code, grounded in the real code, rather than in a separate design tool/conversation.
 
-**A concrete spec for this exists**: see `morgonlistan-brand-spec.md` in the repo root — "Lugn morgon" direction, Fraunces + Karla typefaces, a 5-color day/night palette, and specific component rules (checkboxes, reward jar, color picker). Design work for this project happens directly in Claude Code going forward, grounded in the real code, rather than in a separate design tool/conversation — that's what surfaced the placement/layout ambiguities that spec originally had (now resolved, noted in that file).
-
-- [ ] Write a short brand guideline document and keep it in the repo, so every new screen builds from it
-- [ ] Define the palette by role, not by taste: primary, secondary, background/surface, text, plus semantic colours (success, warning, disabled)
-- [ ] One colour per kid profile, drawn from the palette and distinguishable at a glance
-- [ ] Decide the overall mood — playful and childlike, or calm and modern with playful accents
-- [ ] Implement as design tokens / theme variables, never hard-coded hex values in components
-- [ ] Check contrast for text and for the tick/untick states (kids should read state instantly)
-- [ ] Colour must not be the only signal — pair with icon or shape for done/not-done
+- [x] Write a short brand guideline document and keep it in the repo, so every new screen builds from it — `brand-guide.md`
+- [x] One colour per kid profile, drawn from the palette and distinguishable at a glance — 12-color wheel, up from 6
+- [x] Decide the overall mood — calm/muted by default, with a small set of vivid "splash" colours reserved for actual wins
+- [x] Colour must not be the only signal — every task still pairs its state with an emoji, not colour alone
+- [ ] Define the *rest* of the UI by role, not just kid cards: primary buttons, backgrounds/surfaces, text — currently still original grays/blues outside the kid-card system
+- [ ] Implement as CSS custom properties / theme tokens throughout `style.css`, not just the kid-card variables that already exist (`--task-done-bg` etc.) — most of the app still uses hard-coded hex values
+- [ ] Check contrast for text and for the tick/untick states across all 12 base colors (kids should read state instantly)
 - [ ] Define the celebration/reward colour used at cycle end and on completion
 - [ ] Decide dark mode: support it properly or lock the app to light
 - [ ] Pick typography at the same time — one family, a small set of sizes
