@@ -335,21 +335,22 @@ function renderLoginScreen() {
 }
 
 async function initAuth() {
-  const { data: { session } } = await supabaseClient.auth.getSession();
-  if (session) {
-    await bootstrapApp(session.user.id);
-  } else {
-    showLoginScreen();
-  }
-
+  // Deliberately no separate getSession() call here: it returns any valid
+  // session, including one from an unconsumed password-recovery link, and
+  // would race with (and beat) the PASSWORD_RECOVERY event below. Supabase
+  // always fires exactly one of these events on startup (INITIAL_SESSION,
+  // PASSWORD_RECOVERY, SIGNED_IN, ...), so onAuthStateChange alone is the
+  // single source of truth for what screen to show first.
   supabaseClient.auth.onAuthStateChange((event, session) => {
     if (event === "PASSWORD_RECOVERY") {
       showSetNewPasswordScreen();
-    } else if (event === "SIGNED_IN" && session && session.user.id !== currentUserId) {
-      bootstrapApp(session.user.id);
     } else if (event === "SIGNED_OUT") {
       currentUserId = null;
       state = null;
+      showLoginScreen();
+    } else if (session && session.user.id !== currentUserId) {
+      bootstrapApp(session.user.id);
+    } else if (!session && event === "INITIAL_SESSION") {
       showLoginScreen();
     }
   });
