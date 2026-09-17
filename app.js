@@ -207,53 +207,130 @@ function showLoginScreen() {
   app.appendChild(renderLoginScreen());
 }
 
+function friendlyAuthError(error) {
+  const msg = error && error.message || "";
+  if (/invalid login credentials/i.test(msg)) return "Fel e-post eller lösenord.";
+  if (/user already registered/i.test(msg)) return "Det finns redan ett konto med den e-postadressen. Logga in istället.";
+  if (/password should be at least/i.test(msg)) return "Lösenordet måste vara minst 6 tecken.";
+  if (/unable to validate email/i.test(msg) || /invalid email/i.test(msg)) return "Ogiltig e-postadress.";
+  return "Något gick fel. Försök igen.";
+}
+
 function renderLoginScreen() {
+  let mode = "login"; // "login" | "signup"
   const wrap = el("div", "screen onboard-wrap");
-  wrap.innerHTML = `
-    <div class="big-emoji">🍬</div>
-    <div class="home-title">Morgonlistan</div>
-    <div>Ange din e-postadress för att logga in eller skapa ett konto.</div>
-  `;
 
-  const field = el("div", "field");
-  field.innerHTML = `<label>E-post</label>`;
-  const emailInput = document.createElement("input");
-  emailInput.type = "email";
-  emailInput.placeholder = "din@epost.se";
-  emailInput.autocomplete = "email";
-  field.appendChild(emailInput);
-  wrap.appendChild(field);
-
-  const errorEl = el("div", "field-error", "Något gick fel. Försök igen.");
-  errorEl.style.display = "none";
-  wrap.appendChild(errorEl);
-
-  const btn = el("button", "primary-btn", "Skicka inloggningslänk");
-  btn.onclick = async () => {
-    const email = emailInput.value.trim();
-    if (!email) { emailInput.focus(); return; }
-    errorEl.style.display = "none";
-    btn.disabled = true;
-    btn.textContent = "Skickar...";
-    const { error } = await supabaseClient.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: window.location.href },
-    });
-    if (error) {
-      errorEl.style.display = "block";
-      btn.disabled = false;
-      btn.textContent = "Skicka inloggningslänk";
-      return;
-    }
+  function draw() {
+    wrap.innerHTML = "";
     wrap.innerHTML = `
-      <div class="big-emoji">📬</div>
-      <div class="home-title">Kolla din inkorg!</div>
-      <div>Vi har skickat en inloggningslänk till ${escapeHtml(email)}.</div>
+      <div class="big-emoji">🍬</div>
+      <div class="home-title">Morgonlistan</div>
+      <div>${mode === "login" ? "Logga in på ditt konto." : "Skapa ett konto för din familj."}</div>
     `;
-  };
-  wrap.appendChild(btn);
 
-  setTimeout(() => emailInput.focus(), 50);
+    const emailField = el("div", "field");
+    emailField.innerHTML = `<label>E-post</label>`;
+    const emailInput = document.createElement("input");
+    emailInput.type = "email";
+    emailInput.placeholder = "din@epost.se";
+    emailInput.autocomplete = "email";
+    emailField.appendChild(emailInput);
+    wrap.appendChild(emailField);
+
+    const passwordField = el("div", "field");
+    passwordField.innerHTML = `<label>Lösenord</label>`;
+    const passwordInput = document.createElement("input");
+    passwordInput.type = "password";
+    passwordInput.placeholder = mode === "signup" ? "Minst 6 tecken" : "••••••••";
+    passwordInput.autocomplete = mode === "login" ? "current-password" : "new-password";
+    passwordField.appendChild(passwordInput);
+    wrap.appendChild(passwordField);
+
+    const errorEl = el("div", "field-error", "Något gick fel. Försök igen.");
+    errorEl.style.display = "none";
+    wrap.appendChild(errorEl);
+
+    const btn = el("button", "primary-btn", mode === "login" ? "Logga in" : "Skapa konto");
+    btn.onclick = async () => {
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+      if (!email) { emailInput.focus(); return; }
+      if (!password) { passwordInput.focus(); return; }
+      errorEl.style.display = "none";
+      btn.disabled = true;
+      btn.textContent = mode === "login" ? "Loggar in..." : "Skapar konto...";
+
+      if (mode === "login") {
+        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) {
+          errorEl.textContent = friendlyAuthError(error);
+          errorEl.style.display = "block";
+          btn.disabled = false;
+          btn.textContent = "Logga in";
+        }
+        // On success, onAuthStateChange in initAuth() takes over.
+      } else {
+        const { error } = await supabaseClient.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: window.location.href },
+        });
+        if (error) {
+          errorEl.textContent = friendlyAuthError(error);
+          errorEl.style.display = "block";
+          btn.disabled = false;
+          btn.textContent = "Skapa konto";
+          return;
+        }
+        wrap.innerHTML = `
+          <div class="big-emoji">📬</div>
+          <div class="home-title">Bekräfta din e-post</div>
+          <div>Vi har skickat ett bekräftelsemejl till ${escapeHtml(email)}. Klicka på länken i mejlet för att aktivera kontot.</div>
+        `;
+      }
+    };
+    wrap.appendChild(btn);
+
+    const links = el("div", "auth-links");
+    const toggleLink = document.createElement("button");
+    toggleLink.type = "button";
+    toggleLink.className = "link-btn";
+    toggleLink.textContent = mode === "login" ? "Inget konto? Skapa ett" : "Har du redan ett konto? Logga in";
+    toggleLink.onclick = () => { mode = mode === "login" ? "signup" : "login"; draw(); };
+    links.appendChild(toggleLink);
+
+    if (mode === "login") {
+      const forgotLink = document.createElement("button");
+      forgotLink.type = "button";
+      forgotLink.className = "link-btn";
+      forgotLink.textContent = "Glömt lösenordet?";
+      forgotLink.onclick = async () => {
+        const email = emailInput.value.trim();
+        if (!email) { emailInput.focus(); return; }
+        forgotLink.disabled = true;
+        const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+          redirectTo: window.location.href,
+        });
+        if (error) {
+          errorEl.textContent = friendlyAuthError(error);
+          errorEl.style.display = "block";
+          forgotLink.disabled = false;
+          return;
+        }
+        wrap.innerHTML = `
+          <div class="big-emoji">📬</div>
+          <div class="home-title">Kolla din inkorg</div>
+          <div>Vi har skickat instruktioner för att återställa lösenordet till ${escapeHtml(email)}.</div>
+        `;
+      };
+      links.appendChild(forgotLink);
+    }
+    wrap.appendChild(links);
+
+    setTimeout(() => emailInput.focus(), 50);
+  }
+
+  draw();
   return wrap;
 }
 

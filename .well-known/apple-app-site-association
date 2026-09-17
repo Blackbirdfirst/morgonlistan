@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "5N2289UW73.app.morninglist.ios",
+        "paths": ["*"]
+      }
+    ]
+  }
+}
