@@ -343,7 +343,9 @@ async function initAuth() {
   }
 
   supabaseClient.auth.onAuthStateChange((event, session) => {
-    if (event === "SIGNED_IN" && session && session.user.id !== currentUserId) {
+    if (event === "PASSWORD_RECOVERY") {
+      showSetNewPasswordScreen();
+    } else if (event === "SIGNED_IN" && session && session.user.id !== currentUserId) {
       bootstrapApp(session.user.id);
     } else if (event === "SIGNED_OUT") {
       currentUserId = null;
@@ -351,6 +353,55 @@ async function initAuth() {
       showLoginScreen();
     }
   });
+}
+
+function showSetNewPasswordScreen() {
+  app.innerHTML = "";
+  app.appendChild(renderSetNewPasswordScreen());
+}
+
+function renderSetNewPasswordScreen() {
+  const wrap = el("div", "screen onboard-wrap");
+  wrap.innerHTML = `
+    <div class="big-emoji">🔑</div>
+    <div class="home-title">Nytt lösenord</div>
+    <div>Ange ett nytt lösenord för ditt konto.</div>
+  `;
+
+  const field = el("div", "field");
+  field.innerHTML = `<label>Nytt lösenord</label>`;
+  const passwordInput = document.createElement("input");
+  passwordInput.type = "password";
+  passwordInput.placeholder = "Minst 6 tecken";
+  passwordInput.autocomplete = "new-password";
+  field.appendChild(passwordInput);
+  wrap.appendChild(field);
+
+  const errorEl = el("div", "field-error", "Något gick fel. Försök igen.");
+  errorEl.style.display = "none";
+  wrap.appendChild(errorEl);
+
+  const btn = el("button", "primary-btn", "Spara lösenord");
+  btn.onclick = async () => {
+    const password = passwordInput.value;
+    if (!password) { passwordInput.focus(); return; }
+    errorEl.style.display = "none";
+    btn.disabled = true;
+    btn.textContent = "Sparar...";
+    const { data, error } = await supabaseClient.auth.updateUser({ password });
+    if (error) {
+      errorEl.textContent = friendlyAuthError(error);
+      errorEl.style.display = "block";
+      btn.disabled = false;
+      btn.textContent = "Spara lösenord";
+      return;
+    }
+    await bootstrapApp(data.user.id);
+  };
+  wrap.appendChild(btn);
+
+  setTimeout(() => passwordInput.focus(), 50);
+  return wrap;
 }
 
 // ---------- Date helpers ----------
