@@ -58,12 +58,15 @@ One muted hue wheel, same saturation and lightness throughout — only the hue t
 
 ### The splashes (`SPLASH_COLORS` in `app.js`)
 
-Shared across every kid, never a card's identity — only ever the answer to "what just happened." Currently wired to two real product moments; `Sky Spark` (#4FC1E0, full list done) and `Grass Pop` (#6FBE6A, streak milestone) are reserved for features that don't exist yet.
+Shared across every kid, never a card's identity — only ever the answer to "what just happened." Only the first two are wired to a real product moment today; the rest are reserved for features that don't exist yet, including `Berry Pop`, which currently lives only in the App Store icon.
 
 | Name | Hex | Role |
 |---|---|---|
 | Sunshine | `#FFC93C` | a single task checked off (`SPLASH_COLORS.tick`) |
 | Coral Pop | `#F0654A` | a session fully completed (`SPLASH_COLORS.reward`) |
+| Sky Spark | `#4FC1E0` | reserved — full list done |
+| Grass Pop | `#6FBE6A` | reserved — streak milestone |
+| Berry Pop | `#E0568C` | reserved — used today only in the App Store icon |
 
 ## 5. Type
 
@@ -76,7 +79,7 @@ A warm serif for anything that's the brand speaking, a clean grotesk for anythin
 
 Real emoji, not custom illustration — they're already familiar, already render everywhere, and already speak every language. One per task, standing for one concrete, literal thing a child already knows by sight.
 
-**The exception is the App Store icon itself** (`app-icon.svg` at the repo root, rasterized to `ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png`): a sun mark built from [Phosphor Icons'](https://github.com/phosphor-icons/core) bold sun glyph (MIT-licensed), recoloured into the app's own palette — cream background (`#F7F2E9`), the ring in Sunshine, and the eight rays split evenly two-per-colour across all four splash colours (Coral Pop, Sky Spark, Grass Pop, and Sunshine again), with each pair of rays diametrically opposite so the mark reads as deliberate, not randomly cycled. If this ever needs to change, edit `app-icon.svg` and re-rasterize — don't hand-edit the PNG.
+**The exception is the App Store icon itself** (`app-icon.svg` at the repo root, rasterized to `ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png`): a sun mark built from [Phosphor Icons'](https://github.com/phosphor-icons/core) bold sun glyph (MIT-licensed), recoloured into the app's own palette — cream background (`#F7F2E9`), the ring in Sunshine, and the eight rays split evenly two-per-colour across Coral Pop, Sky Spark, Grass Pop, and Berry Pop, with each pair of rays diametrically opposite so the mark reads as deliberate, not randomly cycled. Berry Pop was created for this icon specifically, to complete the colour wheel the other three splashes leave a gap in (red-orange, green, cyan-blue — magenta/berry was the missing family); it's not used anywhere else in the app yet. If the icon ever needs to change, edit `app-icon.svg` and re-rasterize — don't hand-edit the PNG.
 
 ## 7. Quick reference
 
