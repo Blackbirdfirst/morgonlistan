@@ -15,6 +15,7 @@ Morgonlistan — a morning/evening checklist app for kids. Plain vanilla HTML/CS
 - `serve.py` — local dev server
 - `.claude/launch.json` — dev server config for the Browser pane preview tool
 - `brand-guide.md` — the settled visual identity and copy tonality reference (see `ROADMAP.md` §4); supersedes the removed `morgonlistan-brand-spec.md`
+- `app-icon.svg` — source of the App Store icon; see "Icons" in `brand-guide.md` for how it maps to `ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png`
 - `ios/` — the native iOS wrapper (Capacitor); see "Native iOS app" below
 - `www/` — **gitignored**, a generated copy of the four web files for Capacitor to bundle; never edit directly, see "Native iOS app"
 - `capacitor.config.json`, `package.json` — Capacitor/npm config, added solely to support the iOS wrapper (see "Native iOS app")

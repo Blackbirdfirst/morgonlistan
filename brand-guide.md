@@ -76,6 +76,8 @@ A warm serif for anything that's the brand speaking, a clean grotesk for anythin
 
 Real emoji, not custom illustration — they're already familiar, already render everywhere, and already speak every language. One per task, standing for one concrete, literal thing a child already knows by sight.
 
+**The exception is the App Store icon itself** (`app-icon.svg` at the repo root, rasterized to `ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png`): a sun mark built from [Phosphor Icons'](https://github.com/phosphor-icons/core) bold sun glyph (MIT-licensed), recoloured into the app's own palette — cream background (`#F7F2E9`), the ring in Sunshine, and the eight rays split evenly two-per-colour across all four splash colours (Coral Pop, Sky Spark, Grass Pop, and Sunshine again), with each pair of rays diametrically opposite so the mark reads as deliberate, not randomly cycled. If this ever needs to change, edit `app-icon.svg` and re-rasterize — don't hand-edit the PNG.
+
 ## 7. Quick reference
 
 **Do**
