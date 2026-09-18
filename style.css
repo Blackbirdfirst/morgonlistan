@@ -203,7 +203,6 @@ button {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 1px;
-  background: rgba(0,0,0,0.045);
   border-radius: 14px;
   padding: 4px 1px;
   width: 100%;
@@ -252,8 +251,9 @@ button {
 }
 
 .celebration-line1 {
-  font-size: 16px;
-  font-weight: 800;
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 18px;
+  font-weight: 600;
   color: var(--celebration-accent, #F0654A);
   margin-top: 2px;
 }
@@ -268,7 +268,12 @@ button {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  touch-action: pan-y;
+  /* pan-y alone would block the horizontal swipe-between-kids gesture for
+     any touch starting here (it only reached the card-scroller's pan-x
+     handling via the reward-card area above, which has no touch-action
+     override) — allowing both axes lets the browser route the gesture by
+     its actual direction instead of only ever treating this area as vertical. */
+  touch-action: pan-x pan-y;
   padding: 0 16px 10px 16px;
   display: flex;
   flex-direction: column;
