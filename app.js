@@ -126,6 +126,21 @@ if (window.location.hash.includes("error=")) {
   history.replaceState(null, "", window.location.pathname);
 }
 
+// If this exact tab was already open on this origin (very common: the
+// browser reuses an existing tab for a link tapped in Mail/Gmail rather
+// than opening a new one), the confirmation/recovery link only changes the
+// URL's hash — and a hash-only change is a same-document navigation, so
+// the page never reloads and none of the checks above ever run. Whatever
+// screen happened to be showing (e.g. "Bekräfta din e-post" from the
+// original signup) just sits there forever, looking stuck, even though the
+// new hash is sitting right there unprocessed. Force a real reload so it's
+// picked up exactly like a fresh page load would.
+window.addEventListener("hashchange", () => {
+  if (window.location.hash.includes("access_token=") || window.location.hash.includes("error=")) {
+    window.location.reload();
+  }
+});
+
 async function fetchFamilyState(userId) {
   const { data, error } = await supabaseClient
     .from("families")
