@@ -226,15 +226,21 @@ function friendlyAuthError(error) {
 }
 
 function renderLoginScreen() {
-  let mode = "login"; // "login" | "signup"
+  let mode = "login"; // "login" | "signup" | "forgot"
   const wrap = el("div", "screen onboard-wrap");
 
   function draw() {
     wrap.innerHTML = "";
+
+    const subtitles = {
+      login: "Logga in på ditt konto.",
+      signup: "Skapa ett konto för din familj.",
+      forgot: "Ange din e-post så skickar vi instruktioner för att återställa lösenordet.",
+    };
     wrap.innerHTML = `
       <div class="big-emoji">${getCurrentPeriod() === "evening" ? "🌙" : "☀️"}</div>
-      <div class="home-title">Morgonlistan</div>
-      <div class="onboard-subtitle">${mode === "login" ? "Logga in på ditt konto." : "Skapa ett konto för din familj."}</div>
+      <div class="home-title">${mode === "forgot" ? "Glömt lösenordet?" : "Morgonlistan"}</div>
+      <div class="onboard-subtitle">${subtitles[mode]}</div>
     `;
 
     const emailField = el("div", "field");
@@ -246,49 +252,55 @@ function renderLoginScreen() {
     emailField.appendChild(emailInput);
     wrap.appendChild(emailField);
 
-    const passwordField = el("div", "field");
-    passwordField.innerHTML = `<label>Lösenord</label>`;
-    const passwordInput = document.createElement("input");
-    passwordInput.type = "password";
-    passwordInput.placeholder = mode === "signup" ? "Minst 6 tecken" : "••••••••";
-    passwordInput.autocomplete = mode === "login" ? "current-password" : "new-password";
-    passwordField.appendChild(passwordInput);
-    wrap.appendChild(passwordField);
+    // Someone who forgot their password shouldn't also have to look at (or
+    // think about) a password field, so "forgot" mode is email-only.
+    let passwordInput = null;
+    if (mode !== "forgot") {
+      const passwordField = el("div", "field");
+      passwordField.innerHTML = `<label>Lösenord</label>`;
+      passwordInput = document.createElement("input");
+      passwordInput.type = "password";
+      passwordInput.placeholder = mode === "signup" ? "Minst 6 tecken" : "••••••••";
+      passwordInput.autocomplete = mode === "login" ? "current-password" : "new-password";
+      passwordField.appendChild(passwordInput);
+      wrap.appendChild(passwordField);
+    }
 
     const errorEl = el("div", "field-error", "Något gick fel. Försök igen.");
     errorEl.style.display = "none";
     wrap.appendChild(errorEl);
 
-    const btn = el("button", "primary-btn", mode === "login" ? "Logga in" : "Skapa konto");
+    const btnLabels = { login: "Logga in", signup: "Skapa konto", forgot: "Skicka instruktioner" };
+    const btn = el("button", "primary-btn", btnLabels[mode]);
     btn.onclick = async () => {
       const email = emailInput.value.trim();
-      const password = passwordInput.value;
       if (!email) { emailInput.focus(); return; }
-      if (!password) { passwordInput.focus(); return; }
+      if (mode !== "forgot" && !passwordInput.value) { passwordInput.focus(); return; }
       errorEl.style.display = "none";
       btn.disabled = true;
-      btn.textContent = mode === "login" ? "Loggar in..." : "Skapar konto...";
 
       if (mode === "login") {
-        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        btn.textContent = "Loggar in...";
+        const { error } = await supabaseClient.auth.signInWithPassword({ email, password: passwordInput.value });
         if (error) {
           errorEl.textContent = friendlyAuthError(error);
           errorEl.style.display = "block";
           btn.disabled = false;
-          btn.textContent = "Logga in";
+          btn.textContent = btnLabels[mode];
         }
         // On success, onAuthStateChange in initAuth() takes over.
-      } else {
+      } else if (mode === "signup") {
+        btn.textContent = "Skapar konto...";
         const { error } = await supabaseClient.auth.signUp({
           email,
-          password,
+          password: passwordInput.value,
           options: { emailRedirectTo: window.location.href },
         });
         if (error) {
           errorEl.textContent = friendlyAuthError(error);
           errorEl.style.display = "block";
           btn.disabled = false;
-          btn.textContent = "Skapa konto";
+          btn.textContent = btnLabels[mode];
           return;
         }
         wrap.innerHTML = `
@@ -296,34 +308,16 @@ function renderLoginScreen() {
           <div class="home-title">Bekräfta din e-post</div>
           <div class="onboard-subtitle">Vi har skickat ett bekräftelsemejl till ${escapeHtml(email)}. Klicka på länken i mejlet för att aktivera kontot.</div>
         `;
-      }
-    };
-    wrap.appendChild(btn);
-
-    const links = el("div", "auth-links");
-    const toggleLink = document.createElement("button");
-    toggleLink.type = "button";
-    toggleLink.className = "link-btn";
-    toggleLink.textContent = mode === "login" ? "Inget konto? Skapa ett" : "Har du redan ett konto? Logga in";
-    toggleLink.onclick = () => { mode = mode === "login" ? "signup" : "login"; draw(); };
-    links.appendChild(toggleLink);
-
-    if (mode === "login") {
-      const forgotLink = document.createElement("button");
-      forgotLink.type = "button";
-      forgotLink.className = "link-btn";
-      forgotLink.textContent = "Glömt lösenordet?";
-      forgotLink.onclick = async () => {
-        const email = emailInput.value.trim();
-        if (!email) { emailInput.focus(); return; }
-        forgotLink.disabled = true;
+      } else {
+        btn.textContent = "Skickar...";
         const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
           redirectTo: window.location.href,
         });
         if (error) {
           errorEl.textContent = friendlyAuthError(error);
           errorEl.style.display = "block";
-          forgotLink.disabled = false;
+          btn.disabled = false;
+          btn.textContent = btnLabels[mode];
           return;
         }
         wrap.innerHTML = `
@@ -331,8 +325,34 @@ function renderLoginScreen() {
           <div class="home-title">Kolla din inkorg</div>
           <div class="onboard-subtitle">Vi har skickat instruktioner för att återställa lösenordet till ${escapeHtml(email)}.</div>
         `;
-      };
-      links.appendChild(forgotLink);
+      }
+    };
+    wrap.appendChild(btn);
+
+    const links = el("div", "auth-links");
+    if (mode === "forgot") {
+      const backLink = document.createElement("button");
+      backLink.type = "button";
+      backLink.className = "link-btn";
+      backLink.textContent = "Tillbaka till inloggning";
+      backLink.onclick = () => { mode = "login"; draw(); };
+      links.appendChild(backLink);
+    } else {
+      const toggleLink = document.createElement("button");
+      toggleLink.type = "button";
+      toggleLink.className = "link-btn";
+      toggleLink.textContent = mode === "login" ? "Inget konto? Skapa ett" : "Har du redan ett konto? Logga in";
+      toggleLink.onclick = () => { mode = mode === "login" ? "signup" : "login"; draw(); };
+      links.appendChild(toggleLink);
+
+      if (mode === "login") {
+        const forgotLink = document.createElement("button");
+        forgotLink.type = "button";
+        forgotLink.className = "link-btn";
+        forgotLink.textContent = "Glömt lösenordet?";
+        forgotLink.onclick = () => { mode = "forgot"; draw(); };
+        links.appendChild(forgotLink);
+      }
     }
     wrap.appendChild(links);
 
