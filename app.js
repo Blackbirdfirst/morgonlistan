@@ -98,11 +98,15 @@ let state = null;
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let currentUserId = null;
-// Supabase fires PASSWORD_RECOVERY *and* a follow-up SIGNED_IN/session event
-// for the same recovery link — without this guard, the second event's
-// generic "a session exists" handling would immediately overwrite the
-// "set new password" screen with the normal app.
-let inPasswordRecovery = false;
+// Checked synchronously from the URL itself, before Supabase's async auth
+// event processing even starts. Relying on Supabase's PASSWORD_RECOVERY
+// event alone is not reliable: if a session is already active on this
+// device (very common — the whole point of password login is staying
+// signed in), Supabase quietly swaps in the new session and never fires
+// a distinct recovery event at all, so the app would bootstrap straight
+// past it. The recovery link's URL always carries type=recovery in its
+// hash fragment regardless, so that's the one source of truth here.
+let inPasswordRecovery = window.location.hash.includes("type=recovery");
 
 async function fetchFamilyState(userId) {
   const { data, error } = await supabaseClient
@@ -340,6 +344,13 @@ function renderLoginScreen() {
 }
 
 async function initAuth() {
+  // inPasswordRecovery is already known synchronously from the URL (see
+  // where it's declared) — act on it immediately rather than waiting for
+  // Supabase's PASSWORD_RECOVERY event, which doesn't reliably fire when
+  // a session already existed on this device before the link was opened.
+  if (inPasswordRecovery) {
+    showSetNewPasswordScreen();
+  }
   // Deliberately no separate getSession() call here: it returns any valid
   // session, including one from an unconsumed password-recovery link, and
   // would race with (and beat) the PASSWORD_RECOVERY event below. Supabase
