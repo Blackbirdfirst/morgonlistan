@@ -201,16 +201,22 @@ button {
 
 .reward-jar {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 1px;
   background: rgba(0,0,0,0.045);
   border-radius: 14px;
   padding: 4px 1px;
   width: 100%;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .reward-slot {
-  font-size: 38px;
+  /* Scales down on narrower phones so 7 columns always fit — real devices
+     render emoji glyphs measurably wider than the nominal font-size, which
+     doesn't show up in desktop-browser testing, so this keeps meaningful
+     headroom rather than matching a single measured device exactly. */
+  font-size: clamp(28px, 9.5vw, 38px);
   line-height: 1;
   text-align: center;
   opacity: 0.2;
