@@ -108,6 +108,24 @@ let currentUserId = null;
 // hash fragment regardless, so that's the one source of truth here.
 let inPasswordRecovery = window.location.hash.includes("type=recovery");
 
+// Supabase appends #error=...&error_code=...&error_description=... to the
+// redirect URL instead of a session when a signup/recovery link is invalid,
+// expired, or already used — most often because it's a single-use token and
+// something (a mail provider's own link-scanning, a second click, simple
+// delay) already consumed it before the user's real tap. Left unhandled,
+// this silently lands on a bare login screen with no explanation. Read and
+// strip it synchronously, same timing as inPasswordRecovery above and for
+// the same reason: it also must not survive into a later email's redirect
+// target via emailRedirectTo/redirectTo.
+let pendingAuthError = null;
+if (window.location.hash.includes("error=")) {
+  const errorParams = new URLSearchParams(window.location.hash.slice(1));
+  pendingAuthError = errorParams.get("error_code") === "otp_expired"
+    ? "Länken har gått ut eller redan använts. Begär en ny länk."
+    : "Länken är ogiltig. Försök igen.";
+  history.replaceState(null, "", window.location.pathname);
+}
+
 async function fetchFamilyState(userId) {
   const { data, error } = await supabaseClient
     .from("families")
@@ -268,6 +286,11 @@ function renderLoginScreen() {
 
     const errorEl = el("div", "field-error", "Något gick fel. Försök igen.");
     errorEl.style.display = "none";
+    if (pendingAuthError) {
+      errorEl.textContent = pendingAuthError;
+      errorEl.style.display = "block";
+      pendingAuthError = null;
+    }
     wrap.appendChild(errorEl);
 
     const btnLabels = { login: "Logga in", signup: "Skapa konto", forgot: "Skicka instruktioner" };
@@ -294,7 +317,11 @@ function renderLoginScreen() {
         const { error } = await supabaseClient.auth.signUp({
           email,
           password: passwordInput.value,
-          options: { emailRedirectTo: window.location.href },
+          // The base URL, not window.location.href — the current URL can
+          // carry a leftover #error=... or #access_token=... hash from an
+          // earlier auth attempt, which would otherwise get baked straight
+          // into this email's redirect target.
+          options: { emailRedirectTo: window.location.origin + window.location.pathname },
         });
         if (error) {
           errorEl.textContent = friendlyAuthError(error);
@@ -311,7 +338,7 @@ function renderLoginScreen() {
       } else {
         btn.textContent = "Skickar...";
         const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-          redirectTo: window.location.href,
+          redirectTo: window.location.origin + window.location.pathname,
         });
         if (error) {
           errorEl.textContent = friendlyAuthError(error);
@@ -377,7 +404,13 @@ function handleNativeDeepLink(url) {
   } catch (e) {
     return;
   }
-  if (incoming.hash.includes("type=recovery")) {
+  // Covers every auth callback shape Supabase can hand back — a successful
+  // recovery or signup confirmation (access_token=...) and a failed one
+  // (error=...) alike — not just recovery specifically. Reloading with the
+  // hash in place re-runs this script from scratch, so it's picked up by
+  // the same synchronous checks (inPasswordRecovery, pendingAuthError) and
+  // Supabase's own session detection used for the plain web flow.
+  if (incoming.hash.includes("access_token=") || incoming.hash.includes("error=")) {
     window.location.hash = incoming.hash.slice(1);
     window.location.reload();
   }
