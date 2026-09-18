@@ -98,6 +98,11 @@ let state = null;
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let currentUserId = null;
+// Supabase fires PASSWORD_RECOVERY *and* a follow-up SIGNED_IN/session event
+// for the same recovery link — without this guard, the second event's
+// generic "a session exists" handling would immediately overwrite the
+// "set new password" screen with the normal app.
+let inPasswordRecovery = false;
 
 async function fetchFamilyState(userId) {
   const { data, error } = await supabaseClient
@@ -343,11 +348,17 @@ async function initAuth() {
   // single source of truth for what screen to show first.
   supabaseClient.auth.onAuthStateChange((event, session) => {
     if (event === "PASSWORD_RECOVERY") {
+      inPasswordRecovery = true;
       showSetNewPasswordScreen();
     } else if (event === "SIGNED_OUT") {
+      inPasswordRecovery = false;
       currentUserId = null;
       state = null;
       showLoginScreen();
+    } else if (inPasswordRecovery) {
+      // Ignore the SIGNED_IN/INITIAL_SESSION noise Supabase fires right
+      // after PASSWORD_RECOVERY — stay on "set new password" until the
+      // user actually submits one (or explicitly signs out).
     } else if (session && session.user.id !== currentUserId) {
       bootstrapApp(session.user.id);
     } else if (!session && event === "INITIAL_SESSION") {
@@ -397,6 +408,7 @@ function renderSetNewPasswordScreen() {
       btn.textContent = "Spara lösenord";
       return;
     }
+    inPasswordRecovery = false;
     await bootstrapApp(data.user.id);
   };
   wrap.appendChild(btn);
