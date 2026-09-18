@@ -343,6 +343,34 @@ function renderLoginScreen() {
   return wrap;
 }
 
+// On the native iOS app, the password-reset email link is a Universal Link
+// (https://morninglist.app/...) so it opens this app directly instead of
+// Safari — see AASA config in .well-known/ and App.entitlements. Capacitor
+// hands the incoming URL to JS via the @capacitor/app plugin's "appUrlOpen"
+// event (foreground/background resume) or getLaunchUrl() (cold launch). This
+// app has no bundler, but native plugins are auto-exposed on
+// Capacitor.Plugins without needing to import their JS package.
+function handleNativeDeepLink(url) {
+  let incoming;
+  try {
+    incoming = new URL(url);
+  } catch (e) {
+    return;
+  }
+  if (incoming.hash.includes("type=recovery")) {
+    window.location.hash = incoming.hash.slice(1);
+    window.location.reload();
+  }
+}
+
+if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
+  const CapApp = window.Capacitor.Plugins.App;
+  CapApp.addListener("appUrlOpen", ({ url }) => handleNativeDeepLink(url));
+  CapApp.getLaunchUrl().then((result) => {
+    if (result && result.url) handleNativeDeepLink(result.url);
+  });
+}
+
 async function initAuth() {
   // inPasswordRecovery is already known synchronously from the URL (see
   // where it's declared) — act on it immediately rather than waiting for
