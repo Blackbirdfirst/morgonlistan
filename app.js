@@ -232,9 +232,9 @@ function renderLoginScreen() {
   function draw() {
     wrap.innerHTML = "";
     wrap.innerHTML = `
-      <div class="big-emoji">🍬</div>
+      <div class="big-emoji">${getCurrentPeriod() === "evening" ? "🌙" : "☀️"}</div>
       <div class="home-title">Morgonlistan</div>
-      <div>${mode === "login" ? "Logga in på ditt konto." : "Skapa ett konto för din familj."}</div>
+      <div class="onboard-subtitle">${mode === "login" ? "Logga in på ditt konto." : "Skapa ett konto för din familj."}</div>
     `;
 
     const emailField = el("div", "field");
@@ -294,7 +294,7 @@ function renderLoginScreen() {
         wrap.innerHTML = `
           <div class="big-emoji">📬</div>
           <div class="home-title">Bekräfta din e-post</div>
-          <div>Vi har skickat ett bekräftelsemejl till ${escapeHtml(email)}. Klicka på länken i mejlet för att aktivera kontot.</div>
+          <div class="onboard-subtitle">Vi har skickat ett bekräftelsemejl till ${escapeHtml(email)}. Klicka på länken i mejlet för att aktivera kontot.</div>
         `;
       }
     };
@@ -329,7 +329,7 @@ function renderLoginScreen() {
         wrap.innerHTML = `
           <div class="big-emoji">📬</div>
           <div class="home-title">Kolla din inkorg</div>
-          <div>Vi har skickat instruktioner för att återställa lösenordet till ${escapeHtml(email)}.</div>
+          <div class="onboard-subtitle">Vi har skickat instruktioner för att återställa lösenordet till ${escapeHtml(email)}.</div>
         `;
       };
       links.appendChild(forgotLink);
@@ -416,11 +416,11 @@ function renderSetNewPasswordScreen() {
   wrap.innerHTML = `
     <div class="big-emoji">🔑</div>
     <div class="home-title">Nytt lösenord</div>
-    <div>Ange ett nytt lösenord för ditt konto.</div>
+    <div class="onboard-subtitle">Ange ett nytt lösenord för ditt konto.</div>
   `;
 
   const field = el("div", "field");
-  field.innerHTML = `<label>Nytt lösenord</label>`;
+  field.innerHTML = `<label>Lösenord</label>`;
   const passwordInput = document.createElement("input");
   passwordInput.type = "password";
   passwordInput.placeholder = "Minst 6 tecken";

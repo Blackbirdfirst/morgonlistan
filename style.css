@@ -493,7 +493,7 @@ button {
   margin-bottom: 8px;
 }
 
-.field input[type="text"], .field input[type="number"] {
+.field input[type="text"], .field input[type="number"], .field input[type="email"], .field input[type="password"] {
   width: 100%;
   font-size: 18px;
   padding: 14px 16px;
@@ -503,7 +503,7 @@ button {
   transition: border-color 0.15s ease;
 }
 
-.field input[type="text"]:focus, .field input[type="number"]:focus {
+.field input[type="text"]:focus, .field input[type="number"]:focus, .field input[type="email"]:focus, .field input[type="password"]:focus {
   outline: none;
   border-color: #F0654A;
 }
@@ -650,6 +650,16 @@ button {
 
 .onboard-wrap .big-emoji {
   font-size: 60px;
+}
+
+.onboard-wrap .home-title {
+  font-size: 28px;
+}
+
+.onboard-subtitle {
+  font-size: 15px;
+  color: #495057;
+  line-height: 1.4;
 }
 
 .auth-links {
