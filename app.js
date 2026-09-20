@@ -255,7 +255,48 @@ function friendlyAuthError(error) {
   if (/user already registered/i.test(msg)) return "Det finns redan ett konto med den e-postadressen. Logga in istället.";
   if (/password should be at least/i.test(msg)) return "Lösenordet måste vara minst 6 tecken.";
   if (/unable to validate email/i.test(msg) || /invalid email/i.test(msg)) return "Ogiltig e-postadress.";
+  if (/email not confirmed/i.test(msg)) return "E-posten är inte bekräftad än. Klicka på länken i mejlet först.";
   return "Något gick fel. Försök igen.";
+}
+
+// The confirmation link usually opens somewhere other than the app the
+// person signed up in (Outlook's in-app browser, Safari) — a separate
+// browser context with its own session, so the app they're actually
+// looking at can't see that it happened and would sit here forever. The
+// password is still in hand from the signup form, so just try signing in:
+// it fails with "email not confirmed" until the link has been clicked
+// anywhere, then succeeds and onAuthStateChange takes over. Checked when
+// the app comes back to the foreground (the moment that matters) plus a
+// slow timer as a backstop, kept slow to stay under Supabase's sign-in
+// rate limit. The password only ever lives in this closure, never stored.
+function watchForEmailConfirmation(email, password, screen, onWaiting) {
+  let stopped = false;
+  let trying = false;
+
+  async function attempt(manual) {
+    if (stopped || trying) return;
+    if (!screen.isConnected) { stop(); return; }
+    trying = true;
+    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    trying = false;
+    if (!error) { stop(); return; }
+    if (manual === true) onWaiting(friendlyAuthError(error));
+  }
+  function onVisible() {
+    if (document.visibilityState === "visible") attempt();
+  }
+  function onFocus() { attempt(); }
+  function stop() {
+    stopped = true;
+    clearInterval(timer);
+    document.removeEventListener("visibilitychange", onVisible);
+    window.removeEventListener("focus", onFocus);
+  }
+
+  const timer = setInterval(attempt, 15000);
+  document.addEventListener("visibilitychange", onVisible);
+  window.addEventListener("focus", onFocus);
+  return () => attempt(true);
 }
 
 function renderLoginScreen() {
@@ -329,9 +370,10 @@ function renderLoginScreen() {
         // On success, onAuthStateChange in initAuth() takes over.
       } else if (mode === "signup") {
         btn.textContent = "Skapar konto...";
+        const password = passwordInput.value;
         const { error } = await supabaseClient.auth.signUp({
           email,
-          password: passwordInput.value,
+          password,
           // The base URL, not window.location.href — the current URL can
           // carry a leftover #error=... or #access_token=... hash from an
           // earlier auth attempt, which would otherwise get baked straight
@@ -348,8 +390,22 @@ function renderLoginScreen() {
         wrap.innerHTML = `
           <div class="big-emoji">📬</div>
           <div class="home-title">Bekräfta din e-post</div>
-          <div class="onboard-subtitle">Vi har skickat ett bekräftelsemejl till ${escapeHtml(email)}. Klicka på länken i mejlet för att aktivera kontot.</div>
+          <div class="onboard-subtitle">Vi har skickat ett bekräftelsemejl till ${escapeHtml(email)}. Klicka på länken i mejlet och kom sedan tillbaka hit — då loggas du in automatiskt.</div>
         `;
+        const waitingEl = el("div", "field-error", "");
+        waitingEl.style.display = "none";
+        waitingEl.style.margin = "0";
+        wrap.appendChild(waitingEl);
+        const checkNow = watchForEmailConfirmation(email, password, wrap, (msg) => {
+          waitingEl.textContent = msg;
+          waitingEl.style.display = "block";
+        });
+        const checkBtn = document.createElement("button");
+        checkBtn.type = "button";
+        checkBtn.className = "link-btn";
+        checkBtn.textContent = "Jag har bekräftat";
+        checkBtn.onclick = checkNow;
+        wrap.appendChild(checkBtn);
       } else {
         btn.textContent = "Skickar...";
         const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
