@@ -647,18 +647,41 @@ button {
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  padding: 24px;
+  justify-content: flex-start;
+  overflow-y: auto;
+  padding: 36px 24px 24px;
   gap: 16px;
   text-align: center;
 }
 
-.onboard-wrap .big-emoji {
-  font-size: 60px;
-}
-
 .onboard-wrap .home-title {
   font-size: 28px;
+}
+
+/* Logo lockup every onboarding/auth screen opens with — spacing rules in
+   brand-guide.md §7: 36px clear above/around the icon, name 12px under it,
+   heading 36px under the name (16px gap + this 20px margin). */
+.brand-lockup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.brand-icon {
+  display: block;
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+}
+
+.brand-name {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #868E96;
 }
 
 .onboard-subtitle {
@@ -666,9 +689,16 @@ button {
   color: #495057;
   line-height: 1.4;
   overflow-wrap: anywhere;
+  margin-bottom: 16px;
+}
+
+/* Heading straight into a form (no subtitle): same 32px as text-to-action. */
+.home-title + .field {
+  margin-top: 16px;
 }
 
 .auth-links {
+  margin-top: 8px;
   display: flex;
   flex-direction: column;
   gap: 10px;

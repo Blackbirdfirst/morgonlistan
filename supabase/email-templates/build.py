@@ -19,17 +19,18 @@ import pathlib
 HERE = pathlib.Path(__file__).parent
 LOGO_URL = "https://morninglist.app/email-logo.png"  # email-logo.png in the repo root
 CORAL = "#F0654A"
-SAND = "#F0EAD9"
-TEXT = "#55504A"
+TEXT = "#495057"
 BODY_FONT = "'Karla',Helvetica,Arial,sans-serif"
 
 
+# Shapes mirror the app's own screens (.primary-btn, .field input in style.css)
+# so an email and the screen it leads to look like the same product.
 def button(label, url):
     return (
-        f'<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">'
-        f'<tr><td align="center" style="border-radius:14px; background:{CORAL};">'
+        f'<table role="presentation" cellpadding="0" cellspacing="0" width="100%">'
+        f'<tr><td align="center" style="border-radius:24px; background:{CORAL};">'
         f'<a href="{url}" style="display:block; padding:16px 32px; font-family:{BODY_FONT}; '
-        f'font-size:16px; font-weight:700; color:#FFFFFF; text-decoration:none; white-space:nowrap;">'
+        f'font-size:18px; font-weight:700; color:#FFFFFF; text-decoration:none;">'
         f"{label}</a></td></tr></table>"
     )
 
@@ -37,16 +38,16 @@ def button(label, url):
 def code_block(token):
     return (
         f'<table role="presentation" cellpadding="0" cellspacing="0" width="100%">'
-        f'<tr><td align="center" style="border-radius:14px; background:{SAND}; padding:20px 12px;">'
-        f'<span style="font-family:{BODY_FONT}; font-size:34px; font-weight:700; '
-        f'letter-spacing:8px; color:#2B2A28;">{token}</span></td></tr></table>'
+        f'<tr><td align="center" style="border-radius:16px; background:#FFFFFF; border:2px solid #DEE2E6; padding:16px 12px;">'
+        f'<span style="font-family:{BODY_FONT}; font-size:30px; font-weight:700; '
+        f'letter-spacing:6px; color:#2B2D42;">{token}</span></td></tr></table>'
     )
 
 
 def extra_row(html):
     return (
-        f'<tr><td align="center" style="padding: 24px 36px 0;">'
-        f'<p style="margin:0; font-family:{BODY_FONT}; font-size:14px; line-height:1.6; color:{TEXT};">'
+        f'<tr><td align="center" style="padding: 24px 0 0;">'
+        f'<p style="margin:0; font-family:{BODY_FONT}; font-size:14px; line-height:1.5; color:{TEXT};">'
         f"{html}</p></td></tr>"
     )
 

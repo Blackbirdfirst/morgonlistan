@@ -259,6 +259,14 @@ function showLoginScreen() {
   app.appendChild(renderLoginScreen());
 }
 
+// The lockup every onboarding/auth screen opens with: the app icon (inlined
+// from app-icon.svg so it works offline in the native app) and, in one fixed
+// spot under it, the app's name. The heading below is then always the
+// screen's own title. Spacing rules: brand-guide.md §7, .brand-lockup in style.css.
+function brandLockupHTML() {
+  return `<div class="brand-lockup"><svg class="brand-icon" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="1024" height="1024" fill="#F7F2E9"/><g transform="translate(77, 77) scale(3.4)"><path fill="#FFC93C" d="M196,128a68,68,0,1,1-68-68A68.07,68.07,0,0,1,196,128ZM172,128a44,44,0,1,0-44,44A44.05,44.05,0,0,0,172,128Z"/><path fill="#F0654A" d="M116,36V20a12,12,0,0,1,24,0V36a12,12,0,0,1-24,0Z"/><path fill="#4FC1E0" d="M196,72a12,12,0,0,0,8.49-3.51l12-12a12,12,0,0,0-17-17l-12,12A12,12,0,0,0,196,72Z"/><path fill="#6FBE6A" d="M236,116H220a12,12,0,0,0,0,24h16a12,12,0,0,0,0-24Z"/><path fill="#E0568C" d="M204.49,187.51a12,12,0,0,0-17,17l12,12a12,12,0,0,0,17-17Z"/><path fill="#F0654A" d="M128,208a12,12,0,0,0-12,12v16a12,12,0,0,0,24,0V220A12,12,0,0,0,128,208Z"/><path fill="#4FC1E0" d="M51.51,187.49l-12,12a12,12,0,0,0,17,17l12-12a12,12,0,1,0-17-17Z"/><path fill="#6FBE6A" d="M48,128a12,12,0,0,0-12-12H20a12,12,0,0,0,0,24H36A12,12,0,0,0,48,128Z"/><path fill="#E0568C" d="M51.51,68.49a12,12,0,1,0,17-17l-12-12a12,12,0,0,0-17,17Z"/></g></svg><div class="brand-name">Morgonlistan</div></div>`;
+}
+
 function friendlyAuthError(error) {
   const msg = error && error.message || "";
   if (/invalid login credentials/i.test(msg)) return "Fel e-post eller lösenord.";
@@ -318,7 +326,7 @@ function watchForEmailConfirmation(email, password, screen, onWaiting) {
 // clicked anywhere), so someone who taps it instead isn't stranded.
 function renderSignupConfirmScreen(wrap, email, password) {
   wrap.innerHTML = `
-    <div class="big-emoji">📬</div>
+    ${brandLockupHTML()}
     <div class="home-title">Bekräfta din e-post</div>
     <div class="onboard-subtitle">Vi har skickat en kod till ${escapeHtml(email)}. Skriv in den här för att komma igång.</div>
   `;
@@ -394,15 +402,16 @@ function renderLoginScreen() {
   function draw() {
     wrap.innerHTML = "";
 
+    const headings = { login: "Logga in", signup: "Skapa konto", forgot: "Glömt lösenordet?" };
     const subtitles = {
-      login: "Logga in på ditt konto.",
-      signup: "Skapa ett konto för din familj.",
+      login: "",
+      signup: "Ett konto för hela din familj.",
       forgot: "Ange din e-post så skickar vi instruktioner för att återställa lösenordet.",
     };
     wrap.innerHTML = `
-      <div class="big-emoji">${getCurrentPeriod() === "evening" ? "🌙" : "☀️"}</div>
-      <div class="home-title">${mode === "forgot" ? "Glömt lösenordet?" : "Morgonlistan"}</div>
-      <div class="onboard-subtitle">${subtitles[mode]}</div>
+      ${brandLockupHTML()}
+      <div class="home-title">${headings[mode]}</div>
+      ${subtitles[mode] ? `<div class="onboard-subtitle">${subtitles[mode]}</div>` : ""}
     `;
 
     const emailField = el("div", "field");
@@ -489,7 +498,7 @@ function renderLoginScreen() {
           return;
         }
         wrap.innerHTML = `
-          <div class="big-emoji">📬</div>
+          ${brandLockupHTML()}
           <div class="home-title">Kolla din inkorg</div>
           <div class="onboard-subtitle">Vi har skickat instruktioner för att återställa lösenordet till ${escapeHtml(email)}.</div>
         `;
@@ -605,7 +614,7 @@ async function initAuth() {
 function showAccountActivatedScreen(userId) {
   const wrap = el("div", "screen onboard-wrap");
   wrap.innerHTML = `
-    <div class="big-emoji">✅</div>
+    ${brandLockupHTML()}
     <div class="home-title">Kontot är aktiverat</div>
     <div class="onboard-subtitle">Gå tillbaka till appen där du skapade kontot — du loggas in automatiskt.</div>
   `;
@@ -630,7 +639,7 @@ function showSetNewPasswordScreen() {
 function renderSetNewPasswordScreen() {
   const wrap = el("div", "screen onboard-wrap");
   wrap.innerHTML = `
-    <div class="big-emoji">🔑</div>
+    ${brandLockupHTML()}
     <div class="home-title">Nytt lösenord</div>
     <div class="onboard-subtitle">Ange ett nytt lösenord för ditt konto.</div>
   `;
@@ -892,9 +901,9 @@ function el(tag, className, html) {
 function renderOnboarding() {
   const wrap = el("div", "screen onboard-wrap");
   wrap.innerHTML = `
-    <div class="big-emoji">👋</div>
+    ${brandLockupHTML()}
     <div class="home-title">Välkommen!</div>
-    <div>Lägg till ditt första barn för att komma igång.</div>
+    <div class="onboard-subtitle">Lägg till ditt första barn för att komma igång.</div>
   `;
   const btn = el("button", "primary-btn", "Lägg till barn");
   btn.onclick = () => openKidModal(null);

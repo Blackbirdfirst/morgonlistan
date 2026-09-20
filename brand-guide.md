@@ -81,7 +81,31 @@ Real emoji, not custom illustration — they're already familiar, already render
 
 **The exception is the App Store icon itself** (`app-icon.svg` at the repo root, rasterized to `ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png`): a sun mark built from [Phosphor Icons'](https://github.com/phosphor-icons/core) bold sun glyph (MIT-licensed), recoloured into the app's own palette — cream background (`#F7F2E9`), the ring in Sunshine, and the eight rays split evenly two-per-colour across Coral Pop, Sky Spark, Grass Pop, and Berry Pop, with each pair of rays diametrically opposite so the mark reads as deliberate, not randomly cycled. Berry Pop was created for this icon specifically, to complete the colour wheel the other three splashes leave a gap in (red-orange, green, cyan-blue — magenta/berry was the missing family); it's not used anywhere else in the app yet. If the icon ever needs to change, edit `app-icon.svg` and re-rasterize — don't hand-edit the PNG.
 
-## 7. Quick reference
+## 7. Logo lockup and spacing
+
+<img src="email-logo.png" alt="The Morning List icon" width="96">
+
+Every onboarding/auth screen and every email opens with the same lockup, in the same order, so the app and its emails read as one product:
+
+1. **Icon** — 72px, rounded corners (18px). The sun mark from `app-icon.svg`, inlined in the app (`brandLockupHTML()` in `app.js`) so it works offline, and served as `email-logo.png` (a 192px copy) for emails.
+2. **Name** — "Morgonlistan" in small grey Karla capitals, always directly under the icon and always this exact spot. The name lives here and nowhere else on the screen.
+3. **Heading** — the screen's *own* title in Fraunces (Logga in, Skapa konto, Bekräfta din e-post, Nytt lösenord...), never the app name.
+
+**Spacing** — one unit, half the icon's size (36px), sets the rhythm:
+
+| Between | Space |
+|---|---|
+| Top/sides of the icon and anything else (clear space) | 36px |
+| Icon → name (one unit, the name belongs to the icon) | 12px |
+| Name → heading | 36px |
+| Heading → text | 16px |
+| Text → action (button, code, fields) | 32px |
+| Action → a link line | 24px |
+| Action → small print | 40px |
+
+In the app these live in `.brand-lockup` / `.onboard-subtitle` / `.auth-links` in `style.css`; in emails in `supabase/email-templates/_layout.html`. Change the numbers in both places or not at all.
+
+## 8. Quick reference
 
 **Do**
 - One emoji, one concrete object, per task

@@ -11,40 +11,55 @@
 <body style="margin:0; padding:0; background:#F7F2E9;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F7F2E9;">
     <tr>
-      <td align="center" style="padding: 40px 20px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:420px; background:#FDFBF7; border-radius:20px; overflow:hidden;">
+      <td align="center" style="padding: 48px 24px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:380px;">
           <tr>
-            <td align="center" style="padding: 40px 36px 0;">
-              <img src="https://morninglist.app/email-logo.png" width="64" height="64" alt="Morgonlistan" style="display:block; width:64px; height:64px; border:0; border-radius:16px;">
+            <td align="center" style="padding: 0 0 12px;">
+              <img src="https://morninglist.app/email-logo.png" width="72" height="72" alt="Morgonlistan" style="display:block; width:72px; height:72px; border:0; border-radius:18px;">
             </td>
           </tr>
           <tr>
-            <td align="center" style="padding: 24px 36px 8px;">
-              <h1 style="margin:0 0 14px; font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:26px; line-height:1.25; color:#2B2A28;">
+            <td align="center" style="padding: 0 0 36px;">
+              <p style="margin:0; font-family:'Karla',Helvetica,Arial,sans-serif; font-size:12px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:#868E96;">
+                Morgonlistan
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding: 0 0 16px;">
+              <h1 style="margin:0; font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:28px; line-height:1.25; color:#2B2D42;">
                 Bekr&#228;fta din e-post
               </h1>
-              <p style="margin:0 0 20px; font-family:'Karla',Helvetica,Arial,sans-serif; font-size:15px; line-height:1.6; color:#55504A;">
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding: 0 0 32px;">
+              <p style="margin:0; font-family:'Karla',Helvetica,Arial,sans-serif; font-size:15px; line-height:1.4; color:#495057;">
                 Skriv in koden nedan i appen f&#246;r att bekr&#228;fta din e-postadress.
               </p>
             </td>
           </tr>
           <tr>
-            <td align="center" style="padding: 0 36px;">
-              <table role="presentation" cellpadding="0" cellspacing="0" width="100%"><tr><td align="center" style="border-radius:14px; background:#F0EAD9; padding:20px 12px;"><span style="font-family:'Karla',Helvetica,Arial,sans-serif; font-size:34px; font-weight:700; letter-spacing:8px; color:#2B2A28;">{{ .Token }}</span></td></tr></table>
+            <td align="center" style="padding: 0;">
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%"><tr><td align="center" style="border-radius:16px; background:#FFFFFF; border:2px solid #DEE2E6; padding:16px 12px;"><span style="font-family:'Karla',Helvetica,Arial,sans-serif; font-size:30px; font-weight:700; letter-spacing:6px; color:#2B2D42;">{{ .Token }}</span></td></tr></table>
             </td>
           </tr>
-          <tr><td align="center" style="padding: 24px 36px 0;"><p style="margin:0; font-family:'Karla',Helvetica,Arial,sans-serif; font-size:14px; line-height:1.6; color:#55504A;">F&#246;redrar du en l&#228;nk? <a href="{{ .ConfirmationURL }}" style="color:#F0654A; font-weight:700; text-decoration:none;">Bekr&#228;fta med l&#228;nk</a></p></td></tr>
+          <tr><td align="center" style="padding: 24px 0 0;"><p style="margin:0; font-family:'Karla',Helvetica,Arial,sans-serif; font-size:14px; line-height:1.5; color:#495057;">F&#246;redrar du en l&#228;nk? <a href="{{ .ConfirmationURL }}" style="color:#F0654A; font-weight:700; text-decoration:none;">Bekr&#228;fta med l&#228;nk</a></p></td></tr>
           <tr>
-            <td align="center" style="padding: 28px 36px 36px;">
-              <p style="margin:0; font-family:'Karla',Helvetica,Arial,sans-serif; font-size:13px; line-height:1.6; color:#9C9587;">
+            <td align="center" style="padding: 40px 0 0;">
+              <p style="margin:0; font-family:'Karla',Helvetica,Arial,sans-serif; font-size:13px; line-height:1.5; color:#868E96;">
                 Skapade du inte det h&#228;r kontot? D&#229; kan du ignorera det h&#228;r mejlet &mdash; inget konto skapas utan koden eller l&#228;nken ovan.
               </p>
             </td>
           </tr>
+          <tr>
+            <td align="center" style="padding: 32px 0 0;">
+              <p style="margin:0; font-family:'Karla',Helvetica,Arial,sans-serif; font-size:12px; color:#ADB5BD;">
+                morninglist.app
+              </p>
+            </td>
+          </tr>
         </table>
-        <p style="margin:20px 0 0; font-family:'Karla',Helvetica,Arial,sans-serif; font-size:12px; color:#ADB5BD;">
-          Morgonlistan &middot; morninglist.app
-        </p>
       </td>
     </tr>
   </table>
