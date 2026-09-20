@@ -330,7 +330,7 @@ function renderSignupConfirmScreen(wrap, email, password) {
   codeInput.inputMode = "numeric";
   codeInput.autocomplete = "one-time-code";
   codeInput.maxLength = 10;
-  codeInput.placeholder = "123456";
+  codeInput.placeholder = "Koden från mejlet";
   field.appendChild(codeInput);
   wrap.appendChild(field);
 
