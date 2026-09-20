@@ -1,0 +1,70 @@
+<!--
+  Source for Supabase's "Confirm signup" email template.
+  Deploy via the Supabase dashboard: Authentication → Email Templates →
+  Confirm signup → paste this file's contents into the "Source" editor.
+  No CLI on this machine, same as the delete-account Edge Function.
+
+  {{ .Token }} is the one-time code typed into the app's "Bekräfta din
+  e-post" screen; {{ .ConfirmationURL }} is the fallback link. Both are
+  filled in by Supabase at send time.
+
+  Keep the explicit <meta charset="UTF-8"> — without it mail clients guess
+  the encoding and mangle å/ä/ö.
+-->
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600&family=Karla:wght@400;500;700&display=swap">
+</head>
+<body style="margin:0; padding:0; background:#F7F2E9;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F7F2E9;">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:420px; background:#FDFBF7; border-radius:20px; overflow:hidden;">
+          <tr>
+            <td style="padding: 40px 36px 8px;">
+              <p style="margin:0 0 18px; font-family:'Karla',Helvetica,Arial,sans-serif; font-size:12px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:#8FA888;">
+                Morgonlistan
+              </p>
+              <h1 style="margin:0 0 16px; font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:26px; line-height:1.25; color:#2B2A28;">
+                Bekräfta din e-post
+              </h1>
+              <p style="margin:0 0 20px; font-family:'Karla',Helvetica,Arial,sans-serif; font-size:15px; line-height:1.6; color:#55504A;">
+                Skriv in koden nedan i appen för att bekräfta din e-postadress.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 0 36px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td align="center" style="border-radius:14px; background:#F0EAD9; padding:20px 12px;">
+                    <span style="font-family:'Karla',Helvetica,Arial,sans-serif; font-size:34px; font-weight:700; letter-spacing:8px; color:#2B2A28;">{{ .Token }}</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 24px 36px 0;">
+              <p style="margin:0; font-family:'Karla',Helvetica,Arial,sans-serif; font-size:14px; line-height:1.6; color:#55504A;">
+                Föredrar du en länk?
+                <a href="{{ .ConfirmationURL }}" style="color:#F0654A; font-weight:700; text-decoration:none;">Bekräfta med länk</a>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 28px 36px 40px;">
+              <p style="margin:0; font-family:'Karla',Helvetica,Arial,sans-serif; font-size:13px; line-height:1.6; color:#9C9587;">
+                Skapade du inte det här kontot? Då kan du ignorera det här mejlet &mdash; inget konto skapas utan koden eller länken ovan.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

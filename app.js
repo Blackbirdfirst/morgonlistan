@@ -126,6 +126,16 @@ if (window.location.hash.includes("error=")) {
   history.replaceState(null, "", window.location.pathname);
 }
 
+// Someone who taps the signup link in a browser (rather than typing the code
+// in the app they signed up in) shouldn't end up quietly using the web
+// version by accident — it's the same product, so it looks like the app
+// and they'd carry on there. Show a plain "activated" page instead and
+// point them back to where they signed up, which signs itself in (see
+// watchForEmailConfirmation). The native app skips this — being sent
+// straight into it is exactly what should happen there.
+const isNativeApp = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+let signupConfirmedLanding = window.location.hash.includes("type=signup") && !isNativeApp;
+
 // If this exact tab was already open on this origin (very common: the
 // browser reuses an existing tab for a link tapped in Mail/Gmail rather
 // than opening a new one), the confirmation/recovery link only changes the
@@ -255,7 +265,9 @@ function friendlyAuthError(error) {
   if (/user already registered/i.test(msg)) return "Det finns redan ett konto med den e-postadressen. Logga in istället.";
   if (/password should be at least/i.test(msg)) return "Lösenordet måste vara minst 6 tecken.";
   if (/unable to validate email/i.test(msg) || /invalid email/i.test(msg)) return "Ogiltig e-postadress.";
-  if (/email not confirmed/i.test(msg)) return "E-posten är inte bekräftad än. Klicka på länken i mejlet först.";
+  if (/email not confirmed/i.test(msg)) return "E-posten är inte bekräftad än. Skriv in koden från mejlet.";
+  if (/token has expired|otp_expired|invalid.*token|token.*invalid/i.test(msg)) return "Fel eller utgången kod. Försök igen eller skicka en ny.";
+  if (/security purposes|rate limit/i.test(msg)) return "Vänta en stund innan du försöker igen.";
   return "Något gick fel. Försök igen.";
 }
 
@@ -297,6 +309,82 @@ function watchForEmailConfirmation(email, password, screen, onWaiting) {
   document.addEventListener("visibilitychange", onVisible);
   window.addEventListener("focus", onFocus);
   return () => attempt(true);
+}
+
+// Signup confirmation is a code typed into this screen, so it works the
+// same whichever mail app the email is opened in — a link can't be relied
+// on to open the app rather than a browser. The link in the email still
+// works too (watchForEmailConfirmation signs this screen in once it's been
+// clicked anywhere), so someone who taps it instead isn't stranded.
+function renderSignupConfirmScreen(wrap, email, password) {
+  wrap.innerHTML = `
+    <div class="big-emoji">📬</div>
+    <div class="home-title">Bekräfta din e-post</div>
+    <div class="onboard-subtitle">Vi har skickat en kod till ${escapeHtml(email)}. Skriv in den här för att komma igång.</div>
+  `;
+
+  const field = el("div", "field");
+  field.innerHTML = `<label>Kod</label>`;
+  const codeInput = document.createElement("input");
+  codeInput.type = "text";
+  codeInput.inputMode = "numeric";
+  codeInput.autocomplete = "one-time-code";
+  codeInput.maxLength = 10;
+  codeInput.placeholder = "123456";
+  field.appendChild(codeInput);
+  wrap.appendChild(field);
+
+  const msgEl = el("div", "field-error", "");
+  msgEl.style.display = "none";
+  function showMsg(text, isError = true) {
+    msgEl.textContent = text;
+    msgEl.style.color = isError ? "" : "#495057";
+    msgEl.style.display = "block";
+  }
+  wrap.appendChild(msgEl);
+
+  const btn = el("button", "primary-btn", "Bekräfta");
+  btn.onclick = async () => {
+    const token = codeInput.value.replace(/\s/g, "");
+    if (!token) { codeInput.focus(); return; }
+    msgEl.style.display = "none";
+    btn.disabled = true;
+    btn.textContent = "Bekräftar...";
+    const { error } = await supabaseClient.auth.verifyOtp({ email, token, type: "signup" });
+    if (error) {
+      showMsg(friendlyAuthError(error));
+      btn.disabled = false;
+      btn.textContent = "Bekräfta";
+    }
+    // On success, onAuthStateChange in initAuth() takes over.
+  };
+  wrap.appendChild(btn);
+
+  const checkNow = watchForEmailConfirmation(email, password, wrap, showMsg);
+
+  const links = el("div", "auth-links");
+  const linkBtn = document.createElement("button");
+  linkBtn.type = "button";
+  linkBtn.className = "link-btn";
+  linkBtn.textContent = "Jag klickade på länken istället";
+  linkBtn.onclick = checkNow;
+  links.appendChild(linkBtn);
+
+  const resendBtn = document.createElement("button");
+  resendBtn.type = "button";
+  resendBtn.className = "link-btn";
+  resendBtn.textContent = "Skicka ny kod";
+  resendBtn.onclick = async () => {
+    resendBtn.disabled = true;
+    const { error } = await supabaseClient.auth.resend({ type: "signup", email });
+    resendBtn.disabled = false;
+    if (error) showMsg(friendlyAuthError(error));
+    else showMsg("Vi har skickat en ny kod.", false);
+  };
+  links.appendChild(resendBtn);
+  wrap.appendChild(links);
+
+  setTimeout(() => codeInput.focus(), 50);
 }
 
 function renderLoginScreen() {
@@ -387,25 +475,7 @@ function renderLoginScreen() {
           btn.textContent = btnLabels[mode];
           return;
         }
-        wrap.innerHTML = `
-          <div class="big-emoji">📬</div>
-          <div class="home-title">Bekräfta din e-post</div>
-          <div class="onboard-subtitle">Vi har skickat ett bekräftelsemejl till ${escapeHtml(email)}. Klicka på länken i mejlet och kom sedan tillbaka hit — då loggas du in automatiskt.</div>
-        `;
-        const waitingEl = el("div", "field-error", "");
-        waitingEl.style.display = "none";
-        waitingEl.style.margin = "0";
-        wrap.appendChild(waitingEl);
-        const checkNow = watchForEmailConfirmation(email, password, wrap, (msg) => {
-          waitingEl.textContent = msg;
-          waitingEl.style.display = "block";
-        });
-        const checkBtn = document.createElement("button");
-        checkBtn.type = "button";
-        checkBtn.className = "link-btn";
-        checkBtn.textContent = "Jag har bekräftat";
-        checkBtn.onclick = checkNow;
-        wrap.appendChild(checkBtn);
+        renderSignupConfirmScreen(wrap, email, password);
       } else {
         btn.textContent = "Skickar...";
         const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
@@ -522,12 +592,34 @@ async function initAuth() {
       // Ignore the SIGNED_IN/INITIAL_SESSION noise Supabase fires right
       // after PASSWORD_RECOVERY — stay on "set new password" until the
       // user actually submits one (or explicitly signs out).
+    } else if (signupConfirmedLanding && session) {
+      showAccountActivatedScreen(session.user.id);
     } else if (session && session.user.id !== currentUserId) {
       bootstrapApp(session.user.id);
     } else if (!session && event === "INITIAL_SESSION") {
       showLoginScreen();
     }
   });
+}
+
+function showAccountActivatedScreen(userId) {
+  const wrap = el("div", "screen onboard-wrap");
+  wrap.innerHTML = `
+    <div class="big-emoji">✅</div>
+    <div class="home-title">Kontot är aktiverat</div>
+    <div class="onboard-subtitle">Gå tillbaka till appen där du skapade kontot — du loggas in automatiskt.</div>
+  `;
+  const stay = document.createElement("button");
+  stay.type = "button";
+  stay.className = "link-btn";
+  stay.textContent = "Fortsätt på webben istället";
+  stay.onclick = () => {
+    signupConfirmedLanding = false;
+    bootstrapApp(userId);
+  };
+  wrap.appendChild(stay);
+  app.innerHTML = "";
+  app.appendChild(wrap);
 }
 
 function showSetNewPasswordScreen() {
