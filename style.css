@@ -521,7 +521,7 @@ button {
   margin-bottom: 8px;
 }
 
-.field input[type="text"], .field input[type="number"], .field input[type="email"], .field input[type="password"] {
+.field input[type="text"], .field input[type="number"], .field input[type="email"], .field input[type="password"], .field input[type="time"] {
   width: 100%;
   font-size: 18px;
   padding: 14px 16px;
@@ -531,9 +531,28 @@ button {
   transition: border-color 0.15s ease;
 }
 
-.field input[type="text"]:focus, .field input[type="number"]:focus, .field input[type="email"]:focus, .field input[type="password"]:focus {
+.field input[type="text"]:focus, .field input[type="number"]:focus, .field input[type="email"]:focus, .field input[type="password"]:focus, .field input[type="time"]:focus {
   outline: none;
   border-color: #F0654A;
+}
+
+/* iOS renders a native time control with its own intrinsic width that ignores
+   width:100% and spills off screen; dropping the native appearance lets the
+   normal input sizing apply (the wheel picker still opens on tap). */
+.field input[type="time"] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  min-width: 0;
+  min-height: 54px;
+  text-align: left;
+  background: #FFFFFF;
+  color: #2B2D42;
+  -webkit-text-fill-color: #2B2D42;
+}
+
+.field input[type="time"]::-webkit-date-and-time-value {
+  text-align: left;
 }
 
 .field-error {

@@ -150,12 +150,12 @@ Deliberately **not** blocking this on the full visual identity system (§4) — 
 
 > Depends on §7 (native distribution) — reliable scheduled notifications aren't practical from a pure web app (iOS web-push support for installed PWAs is limited/finicky). This is a natural fit for Capacitor's local notifications plugin once the app is wrapped, since these are fixed-time daily reminders, not server-triggered push — no backend notification service needed.
 
-- [ ] Morning reminder, default **07:00**
-- [ ] Evening reminder, default **19:00**
-- [ ] Both times configurable per family in parent mode
-- [ ] Reschedule automatically when a parent changes either time
-- [ ] One shared-device reminder rather than per-kid, matching the single-device household model elsewhere in the app
-- [ ] Handle notification permission denied gracefully — the reminder is a nice-to-have, the app must work fully without it (same principle as §1's notification handling)
+- [x] Morning reminder, default **07:00**
+- [x] Evening reminder, default **19:00**
+- [x] Both times configurable per family in parent mode
+- [x] Reschedule automatically when a parent changes either time
+- [x] One shared-device reminder rather than per-kid, matching the single-device household model elsewhere in the app
+- [x] Handle notification permission denied gracefully — the reminder is a nice-to-have, the app must work fully without it (same principle as §1's notification handling)
 
 ## 9. Internationalization (Swedish → English → Spanish)
 

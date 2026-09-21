@@ -64,6 +64,7 @@ const MANUAL_ADJUSTMENT_TASK_ID = "manual-adjustment";
 // weekly total stays small (max 2/day, 14/week) and can be shown as icons.
 const SESSION_REWARD_IDS = { morning: "session-reward-morning", evening: "session-reward-evening" };
 const MAX_DISPLAY_ICONS = 14;
+const DEFAULT_REMINDERS = { enabled: false, morning: "07:00", evening: "19:00" }; // "HH:MM" local time
 const DEFAULT_RESET_DAY = 6; // Saturday (Date#getDay: 0=Sun..6=Sat)
 const WEEKDAYS_SV = ["söndag", "måndag", "tisdag", "onsdag", "torsdag", "fredag", "lördag"];
 const WEEKDAY_ORDER = [1, 2, 3, 4, 5, 6, 0]; // shown Monday-first
@@ -78,6 +79,7 @@ function defaultState() {
     completions: [], // { kidId, taskId, date, amount, timestamp }
     settledWeeks: {}, // { [kidId]: week start (ms) whose reward a parent confirmed as handed out }
     resetSchedule: [{ effectiveAt: 0, day: DEFAULT_RESET_DAY }], // which weekday the reward week ends on, and from when
+    reminders: { ...DEFAULT_REMINDERS }, // daily reminder notifications (iPhone app only)
   };
 }
 
@@ -93,6 +95,7 @@ function normalizeState(parsed) {
   if (!parsed.completions) parsed.completions = [];
   if (!parsed.settledWeeks) parsed.settledWeeks = {};
   if (!parsed.resetSchedule || !parsed.resetSchedule.length) parsed.resetSchedule = [{ effectiveAt: 0, day: DEFAULT_RESET_DAY }];
+  parsed.reminders = { ...DEFAULT_REMINDERS, ...(parsed.reminders || {}) };
   return parsed;
 }
 
@@ -255,6 +258,7 @@ async function bootstrapApp(userId) {
 
   state = await fetchFamilyState(userId);
   render();
+  syncReminders().catch(() => {});
 }
 
 window.addEventListener("online", () => {
@@ -666,6 +670,7 @@ async function initAuth() {
       inPasswordRecovery = true;
       showSetNewPasswordScreen();
     } else if (event === "SIGNED_OUT") {
+      cancelReminders().catch(() => {});
       inPasswordRecovery = false;
       currentUserId = null;
       state = null;
@@ -845,6 +850,81 @@ function setResetDay(day, now = new Date()) {
 
 function getRewardWeekEndDay(now = new Date()) {
   return activeScheduleEntry(now, state.resetSchedule).day;
+}
+
+// ---------- Daily reminders (iPhone app only) ----------
+//
+// Local notifications: iOS itself holds and delivers them, so they arrive at
+// the set time even when the app is closed or force-quit, with no server. The
+// plugin only exists inside the native app; on the web there's nothing to
+// schedule, so the setting simply isn't offered there. Times live in the
+// family's `state` (both parents' devices agree); the permission is per
+// device, so each device schedules its own copy and never asks for permission
+// except when a parent turns reminders on.
+
+const REMINDER_IDS = { morning: 1001, evening: 1002 };
+const REMINDER_TEXT = {
+  morning: { title: "Dags för morgonlistan", body: "Öppna Morgonlistan och bocka av." },
+  evening: { title: "Dags för kvällslistan", body: "Öppna Morgonlistan och bocka av." },
+};
+
+// Present only when running inside the native app with the plugin installed.
+function localNotifications() {
+  return (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) || null;
+}
+
+function parseReminderTime(value) {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(value || "");
+  if (!m) return null;
+  const hour = Number(m[1]), minute = Number(m[2]);
+  return hour <= 23 && minute <= 59 ? { hour, minute } : null;
+}
+
+async function reminderPermission() {
+  const ln = localNotifications();
+  if (!ln) return "unavailable";
+  return (await ln.checkPermissions()).display; // "granted" | "denied" | "prompt" ...
+}
+
+// Asks iOS for permission only if it hasn't been decided yet.
+async function ensureReminderPermission() {
+  const ln = localNotifications();
+  if (!ln) return "unavailable";
+  let permission = (await ln.checkPermissions()).display;
+  if (permission === "prompt" || permission === "prompt-with-rationale") {
+    permission = (await ln.requestPermissions()).display;
+  }
+  return permission;
+}
+
+async function cancelReminders() {
+  const ln = localNotifications();
+  if (!ln) return;
+  await ln.cancel({ notifications: Object.values(REMINDER_IDS).map(id => ({ id })) });
+}
+
+// Makes what iOS has scheduled match the family's settings: cancel both, then
+// schedule again if reminders are on and this device has allowed them. Safe to
+// call any time (on load, after a change).
+async function syncReminders() {
+  const ln = localNotifications();
+  if (!ln || !state) return;
+  await cancelReminders();
+  const settings = state.reminders;
+  if (!settings.enabled) return;
+  if ((await ln.checkPermissions()).display !== "granted") return;
+  const notifications = [];
+  for (const kind of ["morning", "evening"]) {
+    const time = parseReminderTime(settings[kind]);
+    if (!time) continue;
+    notifications.push({
+      id: REMINDER_IDS[kind],
+      ...REMINDER_TEXT[kind],
+      // A calendar trigger without a date repeats every day at this time.
+      schedule: { on: { hour: time.hour, minute: time.minute }, allowWhileIdle: true },
+    });
+  }
+  if (notifications.length) await ln.schedule({ notifications });
 }
 
 function pendingResetChange(now = new Date()) {
@@ -1417,7 +1497,9 @@ function renderParent() {
   stepper.appendChild(incBtn);
   settingsSection.appendChild(stepper);
 
-  settingsSection.appendChild(el("div", "field-label", "Veckan slutar"));
+  const weekEndLabel = el("div", "field-label", "Veckan slutar");
+  weekEndLabel.style.marginTop = "24px";
+  settingsSection.appendChild(weekEndLabel);
   const weekdayGrid = el("div", "weekday-grid");
   const weekdayInfo = el("div", "modal-text");
   weekdayInfo.style.marginTop = "12px";
@@ -1457,6 +1539,69 @@ function renderParent() {
   drawWeekdayInfo();
   settingsSection.appendChild(weekdayGrid);
   settingsSection.appendChild(weekdayInfo);
+
+  // Reminders — only offered inside the iPhone app, where the plugin exists.
+  if (localNotifications()) {
+    const reminderLabel = el("div", "field-label", "Påminnelser");
+    reminderLabel.style.marginTop = "24px";
+    settingsSection.appendChild(reminderLabel);
+    const reminderBox = el("div");
+    settingsSection.appendChild(reminderBox);
+    const drawReminders = async () => {
+      reminderBox.innerHTML = "";
+      const permission = await reminderPermission();
+      const on = state.reminders.enabled;
+      const toggle = el("div", "weekday-grid");
+      toggle.style.gridTemplateColumns = "1fr 1fr";
+      [["Av", false], ["På", true]].forEach(([label, value]) => {
+        const btn = el("button", "weekday-option" + (on === value ? " selected" : ""), label);
+        btn.onclick = async () => {
+          if (on === value) return;
+          if (value) {
+            const result = await ensureReminderPermission();
+            if (result !== "granted") { await drawReminders(); return; }
+          }
+          state.reminders.enabled = value;
+          saveState();
+          await syncReminders();
+          await drawReminders();
+        };
+        toggle.appendChild(btn);
+      });
+      reminderBox.appendChild(toggle);
+
+      const note = el("div", "modal-text");
+      note.style.marginTop = "12px";
+      if (permission === "denied") {
+        note.textContent = "Aviseringar är avstängda för Morgonlistan på den här enheten. Slå på dem i iOS Inställningar → Morgonlistan → Aviseringar.";
+      } else if (on && permission !== "granted") {
+        note.textContent = "Påminnelserna är på för familjen, men den här enheten har inte tillåtit aviseringar än.";
+      } else {
+        note.textContent = "En avisering på den här enheten när det är dags för morgon- och kvällslistan.";
+      }
+      reminderBox.appendChild(note);
+
+      if (on) {
+        [["morning", "Morgon"], ["evening", "Kväll"]].forEach(([kind, label]) => {
+          const field = el("div", "field");
+          field.style.marginTop = "12px";
+          field.innerHTML = `<label>${label}</label>`;
+          const input = document.createElement("input");
+          input.type = "time";
+          input.value = state.reminders[kind];
+          input.onchange = async () => {
+            if (!parseReminderTime(input.value)) { input.value = state.reminders[kind]; return; }
+            state.reminders[kind] = input.value;
+            saveState();
+            await syncReminders();
+          };
+          field.appendChild(input);
+          reminderBox.appendChild(field);
+        });
+      }
+    };
+    drawReminders();
+  }
   body.appendChild(settingsSection);
 
   // Account section
