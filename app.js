@@ -64,6 +64,9 @@ const MANUAL_ADJUSTMENT_TASK_ID = "manual-adjustment";
 // weekly total stays small (max 2/day, 14/week) and can be shown as icons.
 const SESSION_REWARD_IDS = { morning: "session-reward-morning", evening: "session-reward-evening" };
 const MAX_DISPLAY_ICONS = 14;
+const DEFAULT_RESET_DAY = 6; // Saturday (Date#getDay: 0=Sun..6=Sat)
+const WEEKDAYS_SV = ["söndag", "måndag", "tisdag", "onsdag", "torsdag", "fredag", "lördag"];
+const WEEKDAY_ORDER = [1, 2, 3, 4, 5, 6, 0]; // shown Monday-first
 
 function defaultState() {
   return {
@@ -74,6 +77,7 @@ function defaultState() {
     currencySymbol: DEFAULT_CURRENCY,
     completions: [], // { kidId, taskId, date, amount, timestamp }
     settledWeeks: {}, // { [kidId]: week start (ms) whose reward a parent confirmed as handed out }
+    resetSchedule: [{ effectiveAt: 0, day: DEFAULT_RESET_DAY }], // which weekday the reward week ends on, and from when
   };
 }
 
@@ -88,6 +92,7 @@ function normalizeState(parsed) {
   if (!parsed.tasks) parsed.tasks = DEFAULT_TASKS.slice();
   if (!parsed.completions) parsed.completions = [];
   if (!parsed.settledWeeks) parsed.settledWeeks = {};
+  if (!parsed.resetSchedule || !parsed.resetSchedule.length) parsed.resetSchedule = [{ effectiveAt: 0, day: DEFAULT_RESET_DAY }];
   return parsed;
 }
 
@@ -279,7 +284,7 @@ function showLandingScreen() {
     <div class="landing-steps">
       <div class="landing-step"><span class="landing-step-icon">🛌</span><span>Du lägger till barnen och deras uppgifter. En bild per uppgift, så att även de som inte läser än hänger med.</span></div>
       <div class="landing-step"><span class="landing-step-icon">✅</span><span>Barnet bockar av under morgonen och kvällen med en tryckning.</span></div>
-      <div class="landing-step"><span class="landing-step-icon">🎁</span><span>En klar lista fyller veckans burk. På lördagskvällen delar ni ut belöningen.</span></div>
+      <div class="landing-step"><span class="landing-step-icon">🎁</span><span>En klar lista fyller veckans burk. När veckan är slut delar ni ut belöningen.</span></div>
     </div>
   `;
   const create = el("button", "primary-btn", "Skapa konto");
@@ -766,25 +771,89 @@ function todayStr() {
   return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
 }
 
-// The reward week resets at the same moment the evening list kicks in on
-// Saturday (EVENING_START_HOUR), since that's when parents hand out the
-// week's reward — so Saturday morning still counts, Saturday evening starts fresh.
-function getRewardWeekStart(now = new Date()) {
+// The reward week ends at the same moment the evening list kicks in
+// (EVENING_START_HOUR) on the family's reset day — Saturday unless changed in
+// Parent mode — since that's when parents hand out the week's reward. So the
+// morning of the reset day still counts and its evening starts fresh.
+//
+// The day is a *schedule*, not a single value: changing it mid-week appends an
+// entry that only takes effect at the end of the week in progress, which is
+// therefore never cut short or stretched, and no reward is lost or moved
+// between weeks. Entry = { effectiveAt: ms of a week boundary, day }. The
+// first week under a new day runs from effectiveAt to the first new-day
+// boundary after it (so that one transition week can be shorter or longer).
+const DEFAULT_SCHEDULE = [{ effectiveAt: 0, day: DEFAULT_RESET_DAY }];
+
+function activeScheduleEntry(now, schedule) {
+  const t = now.getTime();
+  let entry = schedule[0];
+  for (const e of schedule) if (e.effectiveAt <= t) entry = e;
+  return entry;
+}
+
+// Most recent `day` at EVENING_START_HOUR, at or before `now`.
+function latestWeekdayBoundary(now, day) {
   const d = new Date(now);
   d.setHours(EVENING_START_HOUR, 0, 0, 0);
-  const day = d.getDay(); // 0=Sun..6=Sat
-  const daysSinceSaturday = (day + 1) % 7;
-  d.setDate(d.getDate() - daysSinceSaturday);
+  d.setDate(d.getDate() - ((d.getDay() - day + 7) % 7));
   if (d.getTime() > now.getTime()) d.setDate(d.getDate() - 7);
   return d.getTime();
 }
 
-// The reward week that just ended: its start is exactly 7 days (same local
-// wall-clock time, so DST-safe) before the current week's start.
-function getPreviousRewardWeekStart(now = new Date()) {
-  const d = new Date(getRewardWeekStart(now));
-  d.setDate(d.getDate() - 7);
+function getRewardWeekStart(now = new Date(), schedule = (state && state.resetSchedule) || DEFAULT_SCHEDULE) {
+  const entry = activeScheduleEntry(now, schedule);
+  return Math.max(latestWeekdayBoundary(now, entry.day), entry.effectiveAt);
+}
+
+// When the week in progress ends. Calendar days, not 7x24h, so a clock change
+// can't move it off 18:00.
+function getNextRewardWeekEnd(now = new Date(), schedule = (state && state.resetSchedule) || DEFAULT_SCHEDULE) {
+  const entry = activeScheduleEntry(now, schedule);
+  const d = new Date(latestWeekdayBoundary(now, entry.day));
+  d.setDate(d.getDate() + 7);
   return d.getTime();
+}
+
+// The week that just ended, found by looking one millisecond before this
+// week began — correct even when a schedule change made it a different length.
+function getPreviousRewardWeekStart(now = new Date(), schedule = (state && state.resetSchedule) || DEFAULT_SCHEDULE) {
+  return getRewardWeekStart(new Date(getRewardWeekStart(now, schedule) - 1), schedule);
+}
+
+// "3 dagar kvar" — whole calendar days until the week ends.
+function weekDaysLeftText(now = new Date()) {
+  const end = new Date(getNextRewardWeekEnd(now));
+  end.setHours(0, 0, 0, 0);
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+  const days = Math.round((end - today) / 86400000);
+  if (days <= 0) return "slutar i kväll";
+  return days === 1 ? "1 dag kvar" : `${days} dagar kvar`;
+}
+
+// Picks a new reset day. It applies from the end of the week in progress, and
+// choosing again before then replaces the pending change; choosing the day
+// already in force just cancels it.
+function setResetDay(day, now = new Date()) {
+  const schedule = state.resetSchedule.filter(e => e.effectiveAt <= now.getTime());
+  if (activeScheduleEntry(now, schedule).day !== day) {
+    schedule.push({ effectiveAt: getNextRewardWeekEnd(now, schedule), day });
+  }
+  state.resetSchedule = schedule.slice(-10);
+  saveState();
+}
+
+function getRewardWeekEndDay(now = new Date()) {
+  return activeScheduleEntry(now, state.resetSchedule).day;
+}
+
+function pendingResetChange(now = new Date()) {
+  return state.resetSchedule.find(e => e.effectiveAt > now.getTime()) || null;
+}
+
+function formatWeekEnd(ms) {
+  const d = new Date(ms);
+  return `${WEEKDAYS_SV[d.getDay()]} ${d.getDate()}/${d.getMonth() + 1} kl. ${EVENING_START_HOUR}:00`;
 }
 
 // What's still to be handed out from the week that just ended, or null when
@@ -1105,6 +1174,7 @@ function renderKidPanel(kid, tasks, period = getCurrentPeriod()) {
   header.innerHTML = `
     <div class="kid-avatar">${kid.name.charAt(0).toUpperCase()}</div>
     <div class="kid-name">${escapeHtml(kid.name)}</div>
+    <div class="week-left">${weekDaysLeftText()}</div>
   `;
   panel.appendChild(header);
   const weekSummary = buildWeekSummary(kid);
@@ -1346,6 +1416,47 @@ function renderParent() {
   stepper.appendChild(valueEl);
   stepper.appendChild(incBtn);
   settingsSection.appendChild(stepper);
+
+  settingsSection.appendChild(el("div", "field-label", "Veckan slutar"));
+  const weekdayGrid = el("div", "weekday-grid");
+  const weekdayInfo = el("div", "modal-text");
+  weekdayInfo.style.marginTop = "12px";
+  const drawWeekdayInfo = () => {
+    const pending = pendingResetChange();
+    weekdayInfo.textContent = pending
+      ? `Byter till ${WEEKDAYS_SV[pending.day]} efter veckan som slutar ${formatWeekEnd(getNextRewardWeekEnd())}.`
+      : `Veckan slutar ${WEEKDAYS_SV[getRewardWeekEndDay()]} kl. ${EVENING_START_HOUR}:00 — nästa gång ${formatWeekEnd(getNextRewardWeekEnd())}.`;
+  };
+  const selectedWeekday = () => { const p = pendingResetChange(); return p ? p.day : getRewardWeekEndDay(); };
+  const drawWeekdayButtons = () => {
+    weekdayGrid.innerHTML = "";
+    WEEKDAY_ORDER.forEach(day => {
+      const btn = el("button", "weekday-option" + (day === selectedWeekday() ? " selected" : ""), WEEKDAYS_SV[day].slice(0, 3));
+      btn.onclick = () => {
+        if (day === selectedWeekday()) return;
+        const commit = () => { setResetDay(day); drawWeekdayButtons(); drawWeekdayInfo(); };
+        if (day === getRewardWeekEndDay()) { commit(); return; } // just cancels a pending change
+        openModal((sheet, close) => {
+          sheet.appendChild(el("div", "modal-title", "Byta veckodag?"));
+          sheet.appendChild(el("div", "modal-text",
+            `Framöver slutar veckan på ${WEEKDAYS_SV[day]}ar kl. ${EVENING_START_HOUR}:00. Veckan som pågår får ändå slutföras — den slutar ${formatWeekEnd(getNextRewardWeekEnd())} — och ingen belöning försvinner.`));
+          const actions = el("div", "modal-actions");
+          const cancel = el("button", "secondary-btn", "Avbryt");
+          cancel.onclick = close;
+          const ok = el("button", "primary-btn", "Byt");
+          ok.onclick = () => { close(); commit(); };
+          actions.appendChild(cancel);
+          actions.appendChild(ok);
+          sheet.appendChild(actions);
+        });
+      };
+      weekdayGrid.appendChild(btn);
+    });
+  };
+  drawWeekdayButtons();
+  drawWeekdayInfo();
+  settingsSection.appendChild(weekdayGrid);
+  settingsSection.appendChild(weekdayInfo);
   body.appendChild(settingsSection);
 
   // Account section

@@ -594,6 +594,34 @@ button {
   background: #F0654A;
 }
 
+.week-left {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 700;
+  opacity: 0.85;
+}
+
+.weekday-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.weekday-option {
+  background: white;
+  color: #2B2D42;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 12px 0;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.weekday-option.selected {
+  background: #F0654A;
+  color: white;
+}
+
 .modal-overlay {
   position: fixed;
   inset: 0;

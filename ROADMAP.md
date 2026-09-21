@@ -15,13 +15,13 @@ Living list — status: `[ ]` todo · `[~]` in progress · `[x]` done. Sections 
 - [ ] Freeze earning once the cycle has ended (no new candy until the new cycle starts)
 
 **Configurable reset day**
-- [ ] Let a parent change the reset day from Saturday to any other weekday, in parent mode
-- [ ] Keep Saturday 18:00 as the default — it should work out of the box without touching this
+- [x] Let a parent change the reset day from Saturday to any other weekday, in parent mode
+- [x] Keep Saturday 18:00 as the default — it should work out of the box without touching this
 - [ ] Optionally make the reset time configurable too, not just the day
-- [ ] Handle a change made mid-cycle: decide whether the current cycle shortens, extends, or completes on the old day and only then switches
-- [ ] Never silently wipe earned candy when the setting changes — warn first if the change would end the cycle early
-- [ ] Make the current setting visible in the app ("resets on Saturdays"), so the reset is never a surprise
-- [ ] Update the copy in notifications and the cycle indicator to use the chosen day, not hard-coded "Saturday"
+- [x] Handle a change made mid-cycle — decided: the week in progress completes on the old day, the new day applies after it: decide whether the current cycle shortens, extends, or completes on the old day and only then switches
+- [x] Never silently wipe earned candy when the setting changes — nothing is wiped; the change waits for the week's end and a dialog explains it — warn first if the change would end the cycle early
+- [x] Make the current setting visible in the app ("resets on Saturdays"), so the reset is never a surprise
+- [x] Update the copy in notifications and the cycle indicator to use the chosen day, not hard-coded "Saturday" (indicator and landing copy done; notification copy follows with §8)
 
 **Redeem step**
 - [ ] "Use your candy" screen at cycle end: shows total earned, lets the user cash it in
@@ -35,7 +35,7 @@ Living list — status: `[ ]` todo · `[~]` in progress · `[x]` done. Sections 
 - [ ] Handle notification permission being denied — the same info must be visible in-app
 
 **Visibility in the UI**
-- [ ] Persistent cycle indicator: which day of the cycle, days remaining, progress
+- [x] Persistent cycle indicator: which day of the cycle, days remaining, progress — days remaining shown in each kid card's header
 - [x] Clear "cycle ended" banner/state so the reset never looks like lost data or a bug
 - [ ] Cycle history: candies earned and used per past cycle
 
