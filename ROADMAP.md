@@ -9,8 +9,8 @@ Living list — status: `[ ]` todo · `[~]` in progress · `[x]` done. Sections 
 > Note: a basic version of the boundary exists today — the reward week resets at Saturday 18:00, derived from timestamps (see `getRewardWeekStart()` in `app.js` / `CLAUDE.md`), not a running timer. Everything below extends that into a full cycle with explicit states, a redeem step, notifications, and history.
 
 **Core behaviour**
-- [ ] Define the cycle boundary explicitly — start day/time and end day/time, in a fixed timezone (e.g. Europe/Stockholm)
-- [ ] Derive cycle state from timestamps, not from a running timer — must be correct even if the app was closed all week
+- [x] Define the cycle boundary explicitly — start day/time and end day/time, in a fixed timezone (e.g. Europe/Stockholm)
+- [x] Derive cycle state from timestamps, not from a running timer — must be correct even if the app was closed all week
 - [ ] Cycle states: `active` → `ended / ready to redeem` → `reset` → new `active`
 - [ ] Freeze earning once the cycle has ended (no new candy until the new cycle starts)
 
@@ -25,8 +25,8 @@ Living list — status: `[ ]` todo · `[~]` in progress · `[x]` done. Sections 
 
 **Redeem step**
 - [ ] "Use your candy" screen at cycle end: shows total earned, lets the user cash it in
-- [ ] Decide whether redeeming is a manual confirm ("I got my candy") or automatic at reset
-- [ ] Decide the carry-over rule: unspent candy is lost, or rolls into next cycle, or capped roll-over
+- [x] Decide whether redeeming is a manual confirm ("I got my candy") or automatic at reset — decided: manual, per kid, via "Utdelat" behind the parental gate (2026-09-21)
+- [x] Decide the carry-over rule — decided: unspent reward is lost at the reset (2026-09-21)
 
 **Notifications**
 - [ ] Cycle-end notification: "The week is done — you have X candies to use today"
@@ -36,7 +36,7 @@ Living list — status: `[ ]` todo · `[~]` in progress · `[x]` done. Sections 
 
 **Visibility in the UI**
 - [ ] Persistent cycle indicator: which day of the cycle, days remaining, progress
-- [ ] Clear "cycle ended" banner/state so the reset never looks like lost data or a bug
+- [x] Clear "cycle ended" banner/state so the reset never looks like lost data or a bug
 - [ ] Cycle history: candies earned and used per past cycle
 
 **Edge cases**

@@ -73,6 +73,7 @@ function defaultState() {
     rewardPerSession: 1,
     currencySymbol: DEFAULT_CURRENCY,
     completions: [], // { kidId, taskId, date, amount, timestamp }
+    settledWeeks: {}, // { [kidId]: week start (ms) whose reward a parent confirmed as handed out }
   };
 }
 
@@ -86,6 +87,7 @@ function normalizeState(parsed) {
   if (!parsed.kids) parsed.kids = [];
   if (!parsed.tasks) parsed.tasks = DEFAULT_TASKS.slice();
   if (!parsed.completions) parsed.completions = [];
+  if (!parsed.settledWeeks) parsed.settledWeeks = {};
   return parsed;
 }
 
@@ -777,6 +779,28 @@ function getRewardWeekStart(now = new Date()) {
   return d.getTime();
 }
 
+// The reward week that just ended: its start is exactly 7 days (same local
+// wall-clock time, so DST-safe) before the current week's start.
+function getPreviousRewardWeekStart(now = new Date()) {
+  const d = new Date(getRewardWeekStart(now));
+  d.setDate(d.getDate() - 7);
+  return d.getTime();
+}
+
+// What's still to be handed out from the week that just ended, or null when
+// there's nothing (no reward earned) or a parent already confirmed it. The
+// reward is gone at the reset either way — this only keeps the result
+// visible so the reset never looks like lost data (ROADMAP §1).
+function pendingWeekSummary(kidId, now = new Date()) {
+  const start = getPreviousRewardWeekStart(now);
+  const end = getRewardWeekStart(now);
+  if (state.settledWeeks[kidId] === start) return null;
+  const count = state.completions
+    .filter(c => c.kidId === kidId && completionTimestamp(c) >= start && completionTimestamp(c) < end)
+    .reduce((sum, c) => sum + c.amount, 0);
+  return count > 0 ? { count, weekStart: start } : null;
+}
+
 function completionTimestamp(c) {
   return c.timestamp ?? new Date(c.date + "T12:00:00").getTime();
 }
@@ -1000,6 +1024,23 @@ function buildRewardJar(balance, symbol) {
   return `<div class="reward-jar">${slots}</div>${badge}`;
 }
 
+function buildWeekSummary(kid) {
+  const summary = pendingWeekSummary(kid.id);
+  if (!summary) return null;
+  const row = el("div", "week-summary");
+  row.innerHTML = `<span class="week-summary-text">Förra veckan: <b>${summary.count} ${escapeHtml(state.currencySymbol)}</b></span>`;
+  const btn = el("button", "week-summary-btn", "Utdelat");
+  // Parents only: a child tapping this would hide the result before anyone
+  // has seen how many were earned.
+  btn.onclick = () => openParentGate(() => {
+    state.settledWeeks[kid.id] = summary.weekStart;
+    saveState();
+    render();
+  });
+  row.appendChild(btn);
+  return row;
+}
+
 function buildRewardCard(kid, tasks, celebrating = allTasksDoneToday(kid.id, tasks)) {
   const card = el("div", "reward-card" + (celebrating ? " celebrating" : ""));
   card.innerHTML = `
@@ -1066,6 +1107,8 @@ function renderKidPanel(kid, tasks, period = getCurrentPeriod()) {
     <div class="kid-name">${escapeHtml(kid.name)}</div>
   `;
   panel.appendChild(header);
+  const weekSummary = buildWeekSummary(kid);
+  if (weekSummary) panel.appendChild(weekSummary);
   panel.appendChild(buildRewardCard(kid, tasks));
 
   const completedIds = todaysCompletedTaskIds(kid.id);
@@ -1138,7 +1181,7 @@ function toggleTask(kid, task, cardEl, panelEl, tasks, period) {
 const MIN_PARENT_AGE = 18;
 const MAX_PARENT_AGE = 100;
 
-function openParentGate() {
+function openParentGate(onPass) {
   openModal((sheet, close) => {
     sheet.appendChild(el("div", "modal-title", "Föräldraläge"));
     sheet.appendChild(el("div", "modal-text", "Det här är till för föräldrar. Ange ditt födelseår (4 siffror) för att fortsätta."));
@@ -1174,6 +1217,7 @@ function openParentGate() {
         return;
       }
       close();
+      if (onPass) { onPass(); return; }
       route = { screen: "parent" };
       render();
     };

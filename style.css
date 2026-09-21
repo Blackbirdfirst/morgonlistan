@@ -181,6 +181,29 @@ button {
   transform: scale(1.3);
 }
 
+.week-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 16px 10px 16px;
+  padding: 8px 8px 8px 14px;
+  background: #FFFFFF;
+  border-radius: 16px;
+  font-size: 14px;
+  color: #2B2D42;
+  flex-shrink: 0;
+}
+
+.week-summary-btn {
+  background: #F0654A;
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 7px 16px;
+  border-radius: 12px;
+}
+
 .reward-card {
   position: relative;
   margin: 0 16px 16px 16px;
