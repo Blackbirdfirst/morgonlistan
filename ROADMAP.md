@@ -185,3 +185,19 @@ Deliberately **not** blocking this on the full visual identity system (§4) — 
 - [x] Basics for sharing and search: page title, description, Open Graph tags (currently the small icon as image; a proper 1200x630 share image is still to do)
 - [x] Kept zero-build like the rest of the web app: plain HTML/CSS/JS, no framework
 - [ ] Swedish first; English/Spanish follow with §9
+
+## 11. VAB mode (sick-day list)
+
+**Goal:** when the kids are home sick (VAB — *vård av barn*, the Swedish term for staying home to care for a sick child), a parent switches on a mode that swaps the checklist for activities that suit a sick day — drink water, do a puzzle, rest, read — while keeping the essentials that still make sense (e.g. brushing teeth). The normal routine (get dressed, backpack, out the door) shouldn't be shown to a child who is staying in bed.
+
+- [ ] Decide how a task takes part: each task gets a flag "also on sick days" (kept in VAB mode) vs "normal days only" (hidden in VAB mode), plus a separate set of sick-day-only tasks that appear only in the mode. Simplest for a parent to understand, and lets each family decide which main activities stay
+- [ ] Ship sensible defaults: sick-day tasks such as 💧 drink water, 🧩 do a puzzle, 😴 rest, 📖 read/listen to a story, 🍲 eat something; and keep a few main ones (e.g. 🦷 teeth) flagged as staying
+- [ ] Icons follow the brand rule: one emoji, one literal thing, no full sentences — and every new icon gets tested on an actual kid before it ships (`brand-guide.md` §2)
+- [ ] Where the switch lives: a quick on/off a parent can reach without digging through Parent mode (behind the parental gate, so a child can't turn it on to skip the real list), with a clear visible indicator on the kid cards while it's on
+- [ ] Decide the scope: whole family at once, or per child (one sick, one at school)? Per child is more realistic but more UI
+- [ ] Decide what it does to the reward: do sick-day tasks still earn the session reward, earn less, or pause the weekly jar so a sick week doesn't cost anyone their reward? This interacts with the weekly cycle in §1 — decide together
+- [ ] Turning it off: make sure it can't get stuck on. Options: back to normal automatically at the next morning, or a gentle reminder after N days
+- [ ] Switching mid-day: define what happens to tasks already ticked when the list changes — ticked normal tasks must not be lost or double-counted
+- [ ] Interplay with reminders (§8): the morning reminder should probably still fire, or be paused while VAB mode is on — decide
+- [ ] Naming: "VAB" only means something in Sweden. Use a plain Swedish label in the UI (e.g. "Sjukdag" or "Hemma-läge") and a language-neutral internal name, so it translates cleanly with §9
+- [ ] Data shape: a per-task flag plus a mode flag (family- or kid-level) in `state`; older saved states without them must load unchanged
