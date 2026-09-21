@@ -254,9 +254,58 @@ window.addEventListener("online", () => {
   if (currentUserId) flushPendingSave();
 });
 
-function showLoginScreen() {
+// Someone opening morninglist.app on the web for the first time should meet
+// a page that says what this is, not a bare login form. Shown only to
+// signed-out web visitors who haven't yet clicked through to log in or sign
+// up on this browser; never in the native app, and never when an auth link
+// has just landed here (that goes to the login screen with its message).
+const VISITED_KEY = "morgonlistan-seen-login";
+function markVisitorEngaged() {
+  try { localStorage.setItem(VISITED_KEY, "1"); } catch (e) {}
+}
+function shouldShowLanding() {
+  if (isNativeApp || pendingAuthError) return false;
+  try { return !localStorage.getItem(VISITED_KEY); } catch (e) { return true; }
+}
+
+function showLandingScreen() {
+  const wrap = el("div", "screen onboard-wrap");
+  wrap.innerHTML = `
+    ${brandLockupHTML()}
+    <div class="home-title">Morgonrutinen som barnen sköter själva</div>
+    <div class="onboard-subtitle">Morgonlistan är en enkel checklista med bilder för morgon och kväll. Barnet bockar av, du bestämmer belöningen.</div>
+    <div class="landing-steps">
+      <div class="landing-step"><span class="landing-step-icon">🛌</span><span>Du lägger till barnen och deras uppgifter. En bild per uppgift, så att även de som inte läser än hänger med.</span></div>
+      <div class="landing-step"><span class="landing-step-icon">✅</span><span>Barnet bockar av under morgonen och kvällen med en tryckning.</span></div>
+      <div class="landing-step"><span class="landing-step-icon">🎁</span><span>En klar lista fyller veckans burk. På lördagskvällen delar ni ut belöningen.</span></div>
+    </div>
+  `;
+  const create = el("button", "primary-btn", "Skapa konto");
+  create.onclick = () => showLoginScreen("signup");
+  wrap.appendChild(create);
+
+  const links = el("div", "auth-links");
+  const login = document.createElement("button");
+  login.type = "button";
+  login.className = "link-btn";
+  login.textContent = "Har du redan ett konto? Logga in";
+  login.onclick = () => showLoginScreen("login");
+  links.appendChild(login);
+  const privacy = document.createElement("a");
+  privacy.className = "link-btn";
+  privacy.href = "privacy.html";
+  privacy.textContent = "Integritetspolicy";
+  links.appendChild(privacy);
+  wrap.appendChild(links);
+
   app.innerHTML = "";
-  app.appendChild(renderLoginScreen());
+  app.appendChild(wrap);
+}
+
+function showLoginScreen(mode = "login") {
+  markVisitorEngaged();
+  app.innerHTML = "";
+  app.appendChild(renderLoginScreen(mode));
 }
 
 // The lockup every onboarding/auth screen opens with: the app icon (inlined
@@ -316,7 +365,7 @@ function watchForEmailConfirmation(email, password, screen, onWaiting) {
   const timer = setInterval(attempt, 15000);
   document.addEventListener("visibilitychange", onVisible);
   window.addEventListener("focus", onFocus);
-  return () => attempt(true);
+  return { checkNow: () => attempt(true), stop };
 }
 
 // Signup confirmation is a code typed into this screen, so it works the
@@ -324,7 +373,7 @@ function watchForEmailConfirmation(email, password, screen, onWaiting) {
 // on to open the app rather than a browser. The link in the email still
 // works too (watchForEmailConfirmation signs this screen in once it's been
 // clicked anywhere), so someone who taps it instead isn't stranded.
-function renderSignupConfirmScreen(wrap, email, password) {
+function renderSignupConfirmScreen(wrap, email, password, onBack) {
   wrap.innerHTML = `
     ${brandLockupHTML()}
     <div class="home-title">Bekräfta din e-post</div>
@@ -368,14 +417,14 @@ function renderSignupConfirmScreen(wrap, email, password) {
   };
   wrap.appendChild(btn);
 
-  const checkNow = watchForEmailConfirmation(email, password, wrap, showMsg);
+  const watcher = watchForEmailConfirmation(email, password, wrap, showMsg);
 
   const links = el("div", "auth-links");
   const linkBtn = document.createElement("button");
   linkBtn.type = "button";
   linkBtn.className = "link-btn";
   linkBtn.textContent = "Jag klickade på länken istället";
-  linkBtn.onclick = checkNow;
+  linkBtn.onclick = watcher.checkNow;
   links.appendChild(linkBtn);
 
   const resendBtn = document.createElement("button");
@@ -390,13 +439,23 @@ function renderSignupConfirmScreen(wrap, email, password) {
     else showMsg("Vi har skickat en ny kod.", false);
   };
   links.appendChild(resendBtn);
+
+  // Wrong address typed at signup? Back to the form with it filled in. The
+  // watcher must stop too, or it would keep trying to sign in behind the form.
+  const backBtn = document.createElement("button");
+  backBtn.type = "button";
+  backBtn.className = "link-btn";
+  backBtn.textContent = "Ändra e-postadress";
+  backBtn.onclick = () => { watcher.stop(); onBack(); };
+  links.appendChild(backBtn);
   wrap.appendChild(links);
 
   setTimeout(() => codeInput.focus(), 50);
 }
 
-function renderLoginScreen() {
-  let mode = "login"; // "login" | "signup" | "forgot"
+function renderLoginScreen(initialMode = "login") {
+  let mode = initialMode; // "login" | "signup" | "forgot"
+  let prefillEmail = ""; // carried across a redraw when going back from a "check your email" screen
   const wrap = el("div", "screen onboard-wrap");
 
   function draw() {
@@ -420,6 +479,7 @@ function renderLoginScreen() {
     emailInput.type = "email";
     emailInput.placeholder = "din@epost.se";
     emailInput.autocomplete = "email";
+    emailInput.value = prefillEmail;
     emailField.appendChild(emailInput);
     wrap.appendChild(emailField);
 
@@ -484,7 +544,7 @@ function renderLoginScreen() {
           btn.textContent = btnLabels[mode];
           return;
         }
-        renderSignupConfirmScreen(wrap, email, password);
+        renderSignupConfirmScreen(wrap, email, password, () => { mode = "signup"; prefillEmail = email; draw(); });
       } else {
         btn.textContent = "Skickar...";
         const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
@@ -502,6 +562,12 @@ function renderLoginScreen() {
           <div class="home-title">Kolla din inkorg</div>
           <div class="onboard-subtitle">Vi har skickat instruktioner för att återställa lösenordet till ${escapeHtml(email)}.</div>
         `;
+        const backToLogin = document.createElement("button");
+        backToLogin.type = "button";
+        backToLogin.className = "link-btn";
+        backToLogin.textContent = "Tillbaka till inloggning";
+        backToLogin.onclick = () => { mode = "login"; prefillEmail = email; draw(); };
+        wrap.appendChild(backToLogin);
       }
     };
     wrap.appendChild(btn);
@@ -606,7 +672,8 @@ async function initAuth() {
     } else if (session && session.user.id !== currentUserId) {
       bootstrapApp(session.user.id);
     } else if (!session && event === "INITIAL_SESSION") {
-      showLoginScreen();
+      if (shouldShowLanding()) showLandingScreen();
+      else showLoginScreen();
     }
   });
 }

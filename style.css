@@ -652,6 +652,14 @@ button {
   padding: 36px 24px 24px;
   gap: 16px;
   text-align: center;
+  align-items: center;
+}
+
+/* A centered column, so wide web windows don't stretch the content edge to edge. */
+.onboard-wrap > * {
+  width: 100%;
+  max-width: 420px;
+  flex-shrink: 0;
 }
 
 .onboard-wrap .home-title {
@@ -695,6 +703,36 @@ button {
 /* Heading straight into a form (no subtitle): same 32px as text-to-action. */
 .home-title + .field {
   margin-top: 16px;
+}
+
+.landing-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 8px 0 12px;
+  text-align: left;
+  font-size: 15px;
+  line-height: 1.4;
+  color: #495057;
+}
+
+.landing-step {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.landing-step-icon {
+  font-size: 28px;
+  line-height: 1.1;
+  flex: none;
+  width: 34px;
+  text-align: center;
+}
+
+a.link-btn {
+  text-decoration: none;
+  display: inline-block;
 }
 
 .auth-links {
