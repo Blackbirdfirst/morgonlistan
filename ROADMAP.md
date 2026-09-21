@@ -169,3 +169,17 @@ Deliberately **not** blocking this on the full visual identity system (§4) — 
 - [ ] Translate the privacy policy (`privacy.html`) into each supported language
 - [ ] **Known wrinkle**: Supabase's built-in magic-link email template is one fixed language for the whole project, not per-recipient. Properly localizing the login email means sending it ourselves via Resend directly instead of through Supabase's template — meaningfully more work than the rest of this list, worth scoping separately rather than assumed-included
 - [ ] Decide how a family picks/changes their language (first-run choice? Parent Mode setting? Both?)
+
+## 10. Web landing page
+
+**Goal:** someone who visits `morninglist.app` on the web meets a page that explains and promotes the app, not a bare sign-in/sign-up screen. Today the root URL drops a first-time visitor straight into the login screen, which reads as strange when they don't yet know what the product is.
+
+- [ ] Decide the URL layout: the landing page at `/` and the web app moved to its own path (e.g. `/app/`), or one page that shows the landing content to signed-out web visitors and the app once signed in
+- [ ] The native iOS app must keep opening straight into login, never the landing page (it can already tell it's native via `window.Capacitor`)
+- [ ] **Constraint — auth links land on the root URL.** The confirmation and password-reset links, Supabase's redirect allow-list, the Universal Links setup (`.well-known/apple-app-site-association`), the `type=signup`/`type=recovery`/`error=` hash handling in `app.js`, and the email templates all point at `https://morninglist.app/`. Moving the app means changing every one of them together, or keeping those callbacks routed to the app wherever the landing page lives
+- [ ] Content: what it is in a sentence, how it works (parent sets up, kid ticks off, reward jar), a few screenshots, a clear "Öppna webbversionen / Logga in" button, and the App Store / TestFlight link once one exists
+- [ ] Build it from the brand system, not fresh: the logo lockup and spacing rules in `brand-guide.md` §7, Fraunces headings, the calm cream palette, the same copy tone (plain, no exclamation marks doing the work of a sentence)
+- [ ] Link the privacy policy (`privacy.html`) from the footer; add a contact address
+- [ ] Basics for sharing and search: page title, description, and an Open Graph image so a shared link looks right
+- [ ] Keep it zero-build like the rest of the web app: plain HTML/CSS, no framework
+- [ ] Swedish first; English/Spanish follow with §9
