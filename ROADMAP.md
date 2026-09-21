@@ -52,14 +52,14 @@ Living list — status: `[ ]` todo · `[~]` in progress · `[x]` done. Sections 
 
 > Current gap: today, first-run only prompts for a single child. The wizard below (multiple kids, one screen) isn't built yet.
 
-- [ ] First-run wizard that triggers automatically on a fresh install
-- [ ] Step 1: pick number of kids (1 / 2 / 3 / more)
-- [ ] Step 2: enter names for all of them on one screen, then create all profiles in one go
-- [ ] Optional in the same flow: avatar or colour per kid, so they can tell profiles apart
-- [ ] Sensible defaults applied automatically — default task lists, default cycle, default candy values — so the app works immediately with zero further setup
-- [ ] Parent mode stays available afterwards for editing, but is never required to start
-- [ ] Skippable / editable: adding or removing a kid later must not require a reinstall
-- [ ] Don't re-show the wizard on later launches; handle the "started but didn't finish" case
+- [x] First-run wizard that triggers automatically on a fresh install
+- [x] Step 1: pick number of kids (1 / 2 / 3 / more) — 1 to 6
+- [x] Step 2: enter names for all of them on one screen, then create all profiles in one go
+- [x] Optional in the same flow: avatar or colour per kid — colour, spread around the hue wheel, tap the dot to change, so they can tell profiles apart
+- [x] Sensible defaults applied automatically — already in `defaultState()` — default task lists, default cycle, default candy values — so the app works immediately with zero further setup
+- [x] Parent mode stays available afterwards for editing, but is never required to start
+- [x] Skippable / editable — "Hoppa över" opens Parent mode; adding or removing kids later works as before: adding or removing a kid later must not require a reinstall
+- [x] Don't re-show the wizard on later launches; handle the "started but didn't finish" case — `setupDone` flag; nothing is saved until the last step, so an unfinished run simply restarts
 
 ## 3. Morning list: instant first point
 

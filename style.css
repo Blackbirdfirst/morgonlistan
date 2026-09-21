@@ -626,6 +626,30 @@ button {
   gap: 6px;
 }
 
+.count-grid {
+  grid-template-columns: repeat(6, 1fr);
+}
+
+.name-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.name-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.color-dot {
+  width: 54px;
+  height: 54px;
+  flex: none;
+  border-radius: 50%;
+  border: 3px solid #FFFFFF;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+
 .weekday-option {
   background: white;
   color: #2B2D42;

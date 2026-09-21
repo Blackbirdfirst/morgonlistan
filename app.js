@@ -80,6 +80,7 @@ function defaultState() {
     settledWeeks: {}, // { [kidId]: week start (ms) whose reward a parent confirmed as handed out }
     resetSchedule: [{ effectiveAt: 0, day: DEFAULT_RESET_DAY }], // which weekday the reward week ends on, and from when
     reminders: { ...DEFAULT_REMINDERS }, // daily reminder notifications (iPhone app only)
+    setupDone: false, // the first-run wizard has been completed or skipped
   };
 }
 
@@ -96,6 +97,8 @@ function normalizeState(parsed) {
   if (!parsed.settledWeeks) parsed.settledWeeks = {};
   if (!parsed.resetSchedule || !parsed.resetSchedule.length) parsed.resetSchedule = [{ effectiveAt: 0, day: DEFAULT_RESET_DAY }];
   parsed.reminders = { ...DEFAULT_REMINDERS, ...(parsed.reminders || {}) };
+  // A family that already has kids is past setup; only a fresh one gets the wizard.
+  if (parsed.setupDone === undefined) parsed.setupDone = parsed.kids.length > 0;
   return parsed;
 }
 
@@ -1138,12 +1141,141 @@ function el(tag, className, html) {
 
 // ---------- Onboarding ----------
 
+const WIZARD_MAX_KIDS = 6;
+
+// Colours spread around the hue wheel, so kids added together are easy to
+// tell apart at a glance (a parent can still change any of them).
+function evenlySpacedKidColors(n) {
+  return Array.from({ length: n }, (_, i) => KID_COLORS[Math.floor((i * KID_COLORS.length) / n)]);
+}
+
+// First-run setup for a family with no kids: how many, then their names, then
+// everything is created at once. Nothing is saved until the end, so leaving
+// halfway just starts over next time. The default task lists, currency and
+// weekly cycle are already in place (defaultState), so a family can use the
+// app the moment this is done; Parent mode stays there for changing anything.
 function renderOnboarding() {
+  if (state.setupDone) return renderNoKidsScreen();
+  const wrap = el("div", "screen onboard-wrap");
+  let count = 1;
+  let names = [];
+  let colors = [];
+
+  function drawCount() {
+    wrap.innerHTML = `
+      ${brandLockupHTML()}
+      <div class="home-title">Välkommen!</div>
+      <div class="onboard-subtitle">Vi hjälper dig komma igång. Hur många barn ska använda Morgonlistan?</div>
+    `;
+    const grid = el("div", "weekday-grid count-grid");
+    for (let n = 1; n <= WIZARD_MAX_KIDS; n++) {
+      const chip = el("button", "weekday-option" + (n === count ? " selected" : ""), String(n));
+      chip.onclick = () => { count = n; drawCount(); };
+      grid.appendChild(chip);
+    }
+    wrap.appendChild(grid);
+
+    const next = el("button", "primary-btn", "Fortsätt");
+    next.onclick = () => {
+      names = Array.from({ length: count }, (_, i) => names[i] || "");
+      if (colors.length !== count) colors = evenlySpacedKidColors(count); // keep a colour the parent already picked
+      drawNames();
+    };
+    wrap.appendChild(next);
+
+    const links = el("div", "auth-links");
+    const skip = document.createElement("button");
+    skip.type = "button";
+    skip.className = "link-btn";
+    skip.textContent = "Hoppa över, jag lägger till själv";
+    skip.onclick = () => {
+      state.setupDone = true;
+      saveState();
+      route = { screen: "parent" };
+      render();
+    };
+    links.appendChild(skip);
+    wrap.appendChild(links);
+  }
+
+  function drawNames() {
+    wrap.innerHTML = `
+      ${brandLockupHTML()}
+      <div class="home-title">${count === 1 ? "Vad heter barnet?" : "Vad heter barnen?"}</div>
+      <div class="onboard-subtitle">Varje barn får en egen färg. Tryck på färgen för att byta.</div>
+    `;
+    const inputs = [];
+    for (let i = 0; i < count; i++) {
+      const field = el("div", "field");
+      field.innerHTML = `<label>${count === 1 ? "Namn" : `Barn ${i + 1}`}</label>`;
+      const row = el("div", "name-row");
+      const dot = el("button", "color-dot");
+      dot.type = "button";
+      dot.style.background = colors[i];
+      dot.setAttribute("aria-label", "Byt färg");
+      dot.onclick = () => {
+        let idx = KID_COLORS.indexOf(colors[i]);
+        do { idx = (idx + 1) % KID_COLORS.length; } while (colors.includes(KID_COLORS[idx]));
+        colors[i] = KID_COLORS[idx];
+        dot.style.background = colors[i];
+      };
+      const input = document.createElement("input");
+      input.type = "text";
+      input.placeholder = "T.ex. Vera";
+      input.maxLength = 20;
+      input.autocomplete = "off";
+      input.value = names[i];
+      input.oninput = () => { names[i] = input.value; };
+      inputs.push(input);
+      row.appendChild(dot);
+      row.appendChild(input);
+      field.appendChild(row);
+      wrap.appendChild(field);
+    }
+    wrap.appendChild(el("div", "onboard-subtitle", "Vi lägger in vanliga uppgifter för morgon och kväll. Du ändrar dem senare i Föräldraläge."));
+
+    const errorEl = el("div", "field-error", "Skriv ett namn för varje barn.");
+    errorEl.style.display = "none";
+    wrap.appendChild(errorEl);
+
+    const done = el("button", "primary-btn", "Klart");
+    done.onclick = () => {
+      const cleaned = names.map(n => n.trim());
+      const blank = cleaned.findIndex(n => !n);
+      if (blank !== -1) {
+        errorEl.style.display = "block";
+        inputs[blank].focus();
+        return;
+      }
+      state.kids = cleaned.map((name, i) => ({ id: uid(), name, color: colors[i] }));
+      state.setupDone = true;
+      saveState();
+      render();
+    };
+    wrap.appendChild(done);
+
+    const links = el("div", "auth-links");
+    const back = document.createElement("button");
+    back.type = "button";
+    back.className = "link-btn";
+    back.textContent = "Tillbaka";
+    back.onclick = drawCount;
+    links.appendChild(back);
+    wrap.appendChild(links);
+    setTimeout(() => inputs[0].focus(), 50);
+  }
+
+  drawCount();
+  return wrap;
+}
+
+// Setup was skipped (or every child has since been removed): just a way in.
+function renderNoKidsScreen() {
   const wrap = el("div", "screen onboard-wrap");
   wrap.innerHTML = `
     ${brandLockupHTML()}
-    <div class="home-title">Välkommen!</div>
-    <div class="onboard-subtitle">Lägg till ditt första barn för att komma igång.</div>
+    <div class="home-title">Inga barn ännu</div>
+    <div class="onboard-subtitle">Lägg till ett barn för att komma igång.</div>
   `;
   const btn = el("button", "primary-btn", "Lägg till barn");
   btn.onclick = () => openKidModal(null);
