@@ -41,3 +41,22 @@ $$ language plpgsql security definer;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
+
+-- Admin-only convenience view for the Supabase dashboard/SQL Editor: every
+-- family with its signup email, kid count, and state in one readable row.
+-- Explicitly NOT exposed to the app's own API (see the revoke below) — a
+-- view like this joins in auth.users, and without that revoke, PostgREST
+-- could otherwise let a signed-in family query every other family's email.
+create or replace view public.families_overview as
+select
+  u.email,
+  to_char(u.created_at, 'YYYY-MM-DD HH24:MI') as signed_up_at,
+  to_char(f.updated_at, 'YYYY-MM-DD HH24:MI') as updated_at,
+  coalesce(jsonb_array_length(f.state->'kids'), 0) as kid_count,
+  f.id,
+  f.state
+from auth.users u
+join public.families f on f.id = u.id
+order by u.created_at desc;
+
+revoke all on public.families_overview from anon, authenticated;
