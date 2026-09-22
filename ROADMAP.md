@@ -214,3 +214,16 @@ Deliberately **not** blocking this on the full visual identity system (§4) — 
 - [ ] Decide what happens if the kid closes/backgrounds the app mid-brush — resume, restart, or just count it done regardless
 - [ ] Must still work for a family that doesn't want it — a way to keep the plain tick-box instead, since not every kid wants a 2-minute guided routine every time
 - [ ] Consider offline behavior and battery/screen-on time for 2 minutes of active use, twice a day
+
+## 13. More delight on completing a task and a session
+
+**Goal:** make finishing a task, and finishing the whole list, feel like more of a moment — without changing the actual reward math (§1's weekly cap is deliberately tuned, not a bug to fix by making currency more generous).
+
+> Prompted by real feedback: a tester (a child in the extended family) wanted 1 candy per task rather than 1 per session, since a single tick currently feels flat. Considered and set aside: a second currency that converts task-points into session-points — too abstract for a 4–8 year old who can't read yet (brand-guide.md §2), and it would need explaining a conversion rate to a small child. The chosen direction instead is to make each moment feel more rewarding on its own, while every task and full-session amount stays exactly as it is today.
+
+- [ ] **Per-task moment**: something more than the current checkmark + chime when a single task is ticked — the task's own emoji reacting (bounce, sparkle), not a generic effect, so completing "🦷 Tänder" feels different from "🎒 Ryggsäck"
+- [ ] **Per-session moment** (i.e. §3's "extra feedback on the first tick of the day", generalized to the *last* tick too): the current "Allt klart för idag! 🎉" text is the whole payoff for finishing every task — make this bigger and more noticeable, the actual "win" moment of the whole session
+- [ ] **In-session progress with charm**: as tasks get ticked, show something building toward the session reward *before* it's fully earned — explicitly not a plain progress bar; needs an actual charming/fun treatment (a character reacting to each tick, filling something in a delightful way), not just a mechanical percentage
+- [ ] **Longer-term aspiration, explicitly not scoped yet**: real character/animation work, in the spirit of Duolingo's characters and Klarna's checkout animations (reportedly done by a Swedish design studio) — a genuine quality bar to aim for, not a specific mechanic yet. Bigger than anything else in this app so far (real art/animation, not emoji), and directly overlaps with §12's "fun monster/animal" for the toothbrushing step — worth designing one character system that can serve both rather than two unrelated ones
+- [ ] Test every new celebration on an actual kid before it ships, same rule as icons (brand-guide.md §2) — a "positive" moment that isn't actually fun to a 6-year-old is worse than nothing
+- [ ] Keep it fast: a child does this twice a day, every day — a celebration that's delightful once and tedious by the tenth time is a net loss
