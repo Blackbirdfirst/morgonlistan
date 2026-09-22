@@ -47,7 +47,9 @@ create trigger on_auth_user_created
 -- Explicitly NOT exposed to the app's own API (see the revoke below) — a
 -- view like this joins in auth.users, and without that revoke, PostgREST
 -- could otherwise let a signed-in family query every other family's email.
-create or replace view public.families_overview as
+drop view if exists public.families_overview;
+
+create view public.families_overview as
 select
   u.email,
   to_char(u.created_at, 'YYYY-MM-DD HH24:MI') as signed_up_at,
