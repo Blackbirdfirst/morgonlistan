@@ -758,12 +758,38 @@ function renderSetNewPasswordScreen() {
       return;
     }
     inPasswordRecovery = false;
-    await bootstrapApp(data.user.id);
+    // Same reasoning as the signup confirmation's "account activated" page:
+    // a reset link usually opens somewhere other than the app it was
+    // requested from (Outlook's in-app browser, Safari), and bootstrapping
+    // the full working app right there just invites using that instead of
+    // switching to the native app. Unlike signup, there's no way to sign
+    // the original app in automatically here — that app never sees this
+    // new password, only this browser does — so the copy asks for a
+    // manual return + login rather than claiming it'll happen on its own.
+    if (isNativeApp) await bootstrapApp(data.user.id);
+    else showPasswordResetDoneScreen(data.user.id);
   };
   wrap.appendChild(btn);
 
   setTimeout(() => passwordInput.focus(), 50);
   return wrap;
+}
+
+function showPasswordResetDoneScreen(userId) {
+  const wrap = el("div", "screen onboard-wrap");
+  wrap.innerHTML = `
+    ${brandLockupHTML()}
+    <div class="home-title">Lösenordet är sparat</div>
+    <div class="onboard-subtitle">Gå tillbaka till appen och logga in med ditt nya lösenord.</div>
+  `;
+  const stay = document.createElement("button");
+  stay.type = "button";
+  stay.className = "link-btn";
+  stay.textContent = "Fortsätt på webben istället";
+  stay.onclick = () => bootstrapApp(userId);
+  wrap.appendChild(stay);
+  app.innerHTML = "";
+  app.appendChild(wrap);
 }
 
 // ---------- Date helpers ----------
