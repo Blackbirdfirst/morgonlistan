@@ -17,7 +17,7 @@ Living list — status: `[ ]` todo · `[~]` in progress · `[x]` done. Sections 
 **Configurable reset day**
 - [x] Let a parent change the reset day from Saturday to any other weekday, in parent mode
 - [x] Keep Saturday 18:00 as the default — it should work out of the box without touching this
-- [ ] Optionally make the reset time configurable too, not just the day
+- [x] Optionally make the reset time configurable too, not just the day — a `Klockslag` field next to the weekday chips, independent of both the day setting and the daily evening-list switch
 - [x] Handle a change made mid-cycle — decided: the week in progress completes on the old day, the new day applies after it: decide whether the current cycle shortens, extends, or completes on the old day and only then switches
 - [x] Never silently wipe earned candy when the setting changes — nothing is wiped; the change waits for the week's end and a dialog explains it — warn first if the change would end the cycle early
 - [x] Make the current setting visible in the app ("resets on Saturdays"), so the reset is never a surprise
