@@ -201,3 +201,16 @@ Deliberately **not** blocking this on the full visual identity system (§4) — 
 - [ ] Interplay with reminders (§8): the morning reminder should probably still fire, or be paused while VAB mode is on — decide
 - [ ] Naming: "VAB" only means something in Sweden. Use a plain Swedish label in the UI (e.g. "Sjukdag" or "Hemma-läge") and a language-neutral internal name, so it translates cleanly with §9
 - [ ] Data shape: a per-task flag plus a mode flag (family- or kid-level) in `state`; older saved states without them must load unchanged
+
+## 12. Guided toothbrushing step
+
+**Goal:** turn the plain "Tänder & hår" tick-box into an active 2-minute guided brushing routine for the toothbrushing part specifically, so kids actually brush long enough and cover the whole mouth, not just tap the checkbox.
+
+- [ ] A countdown timer for the full 2 minutes, running only while this step is open
+- [ ] Split into 4 quadrants — upper left, upper right, lower left, lower right — 30 seconds each, with a clear indicator of which quadrant is current
+- [ ] A fun character (monster/animal) or simple animation to hold a young kid's attention for the full 2 minutes — needs actual art/animation work, bigger scope than the rest of the app's plain-emoji icons
+- [ ] Sound/vibration cue at each quadrant change and at the end, for a kid who isn't watching the screen the whole time
+- [ ] Decide how this fits the existing task model: a special-cased task (like the reward-jar's session logic), or a generic "guided step" mechanism other tasks could reuse later
+- [ ] Decide what happens if the kid closes/backgrounds the app mid-brush — resume, restart, or just count it done regardless
+- [ ] Must still work for a family that doesn't want it — a way to keep the plain tick-box instead, since not every kid wants a 2-minute guided routine every time
+- [ ] Consider offline behavior and battery/screen-on time for 2 minutes of active use, twice a day
