@@ -64,9 +64,9 @@ const MANUAL_ADJUSTMENT_TASK_ID = "manual-adjustment";
 // weekly total stays small (max 2/day, 14/week) and can be shown as icons.
 const SESSION_REWARD_IDS = { morning: "session-reward-morning", evening: "session-reward-evening" };
 const MAX_DISPLAY_ICONS = 14;
-const DEFAULT_REMINDERS = { enabled: false, morning: "07:00", evening: "19:00" }; // "HH:MM" local time
+const DEFAULT_REMINDERS = { enabled: true, morning: "07:00", evening: "19:00" }; // "HH:MM" local time
 const DEFAULT_RESET_DAY = 6; // Saturday (Date#getDay: 0=Sun..6=Sat)
-const DEFAULT_RESET_HOUR = EVENING_START_HOUR; // matches the evening switch by default, but is independently configurable
+const DEFAULT_RESET_HOUR = 12; // noon Saturday by default — independent of EVENING_START_HOUR, which only governs the daily morning/evening switch
 const WEEKDAYS_SV = ["söndag", "måndag", "tisdag", "onsdag", "torsdag", "fredag", "lördag"];
 const WEEKDAY_ORDER = [1, 2, 3, 4, 5, 6, 0]; // shown Monday-first
 
@@ -1810,8 +1810,20 @@ function renderParent() {
     settingsSection.appendChild(reminderBox);
     const drawReminders = async () => {
       reminderBox.innerHTML = "";
-      const permission = await reminderPermission();
+      let permission = await reminderPermission();
       const on = state.reminders.enabled;
+      // Reminders default to on for a new family, but iOS still needs an
+      // explicit ask before anything can actually be scheduled — and
+      // clicking an already-selected "På" chip does nothing (see below), so
+      // without this, a family that never touched the toggle would be
+      // stuck showing "on" with no way to trigger the prompt. Ask once,
+      // right when this section is first seen in that state; iOS itself
+      // only returns "prompt" until the person has answered, so this can
+      // only ever fire the real system prompt one time, never repeatedly.
+      if (on && (permission === "prompt" || permission === "prompt-with-rationale")) {
+        permission = await ensureReminderPermission();
+        if (permission === "granted") await syncReminders();
+      }
       const toggle = el("div", "weekday-grid");
       toggle.style.gridTemplateColumns = "1fr 1fr";
       [["Av", false], ["På", true]].forEach(([label, value]) => {
