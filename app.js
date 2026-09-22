@@ -865,10 +865,13 @@ function getRewardWeekEndDay(now = new Date()) {
 // device, so each device schedules its own copy and never asks for permission
 // except when a parent turns reminders on.
 
-const REMINDER_IDS = { morning: 1001, evening: 1002 };
+const REMINDER_IDS = { morning: 1001, evening: 1002, weekEnd: 1003 };
 const REMINDER_TEXT = {
   morning: { title: "Dags för morgonlistan", body: "Öppna Morgonlistan och bocka av." },
   evening: { title: "Dags för kvällslistan", body: "Öppna Morgonlistan och bocka av." },
+  // No kid names or counts here — a scheduled notification's text is fixed
+  // at scheduling time and can go stale, so this stays generic on purpose.
+  weekEnd: { title: "Veckan är slut!", body: "Dags att dela ut veckans belöning." },
 };
 
 // Present only when running inside the native app with the plugin installed.
@@ -927,11 +930,30 @@ async function syncReminders() {
       schedule: { on: { hour: time.hour, minute: time.minute }, allowWhileIdle: true },
     });
   }
+  // One-shot, at the next reset moment rather than a repeating daily time —
+  // re-run any time (this function already is, on load and after a change)
+  // and it just re-points at whatever the next boundary currently is, which
+  // also picks up a reset-day change automatically.
+  notifications.push({
+    id: REMINDER_IDS.weekEnd,
+    ...REMINDER_TEXT.weekEnd,
+    schedule: { at: new Date(getNextRewardWeekEnd()), allowWhileIdle: true },
+  });
   if (notifications.length) await ln.schedule({ notifications });
 }
 
 function pendingResetChange(now = new Date()) {
   return state.resetSchedule.find(e => e.effectiveAt > now.getTime()) || null;
+}
+
+// "16/9–23/9" — the week's date span for the history list. Uses the day
+// before `end` (the reset moves to a new day at the exact boundary, which
+// belongs to the new week), so a Saturday-18:00 week reads "13/9–19/9",
+// not "...–20/9".
+function formatWeekRange(startMs, endMs) {
+  const s = new Date(startMs);
+  const e = new Date(endMs - 1);
+  return `${s.getDate()}/${s.getMonth() + 1}–${e.getDate()}/${e.getMonth() + 1}`;
 }
 
 function formatWeekEnd(ms) {
@@ -951,6 +973,32 @@ function pendingWeekSummary(kidId, now = new Date()) {
     .filter(c => c.kidId === kidId && completionTimestamp(c) >= start && completionTimestamp(c) < end)
     .reduce((sum, c) => sum + c.amount, 0);
   return count > 0 ? { count, weekStart: start } : null;
+}
+
+const WEEK_HISTORY_LENGTH = 8;
+
+// The last `count` completed weeks (most recent first, oldest first if a
+// short history exists), each with every kid's total. Never includes the
+// week in progress. Walks backward one boundary at a time with the same
+// "one millisecond before" trick as getPreviousRewardWeekStart, so it's
+// correct across a reset-day change partway through the history too.
+function weekHistory(count = WEEK_HISTORY_LENGTH, now = new Date()) {
+  const weeks = [];
+  let end = getRewardWeekStart(now);
+  for (let i = 0; i < count; i++) {
+    const start = getRewardWeekStart(new Date(end - 1));
+    if (start >= end) break; // guards against a schedule that can't move backward further
+    const totals = {};
+    for (const kid of state.kids) {
+      const total = state.completions
+        .filter(c => c.kidId === kid.id && completionTimestamp(c) >= start && completionTimestamp(c) < end)
+        .reduce((sum, c) => sum + c.amount, 0);
+      if (total > 0) totals[kid.id] = total;
+    }
+    weeks.push({ start, end, totals });
+    end = start;
+  }
+  return weeks;
 }
 
 function completionTimestamp(c) {
@@ -1735,6 +1783,34 @@ function renderParent() {
     drawReminders();
   }
   body.appendChild(settingsSection);
+
+  // History section — only worth showing once at least one week has closed.
+  const weeks = weekHistory();
+  if (weeks.length) {
+    const historySection = el("div");
+    historySection.appendChild(el("div", "section-title", "Tidigare veckor"));
+    weeks.forEach(week => {
+      const row = el("div", "list-row history-row");
+      const label = el("div", "label", formatWeekRange(week.start, week.end));
+      row.appendChild(label);
+      const totalsEl = el("div", "history-totals");
+      if (Object.keys(week.totals).length === 0) {
+        totalsEl.appendChild(el("span", "history-empty", "Inget denna vecka"));
+      } else {
+        state.kids.forEach(kid => {
+          const amount = week.totals[kid.id];
+          if (!amount) return;
+          const chip = el("span", "history-chip");
+          chip.style.background = kid.color;
+          chip.textContent = `${kid.name}: ${amount} ${state.currencySymbol}`;
+          totalsEl.appendChild(chip);
+        });
+      }
+      row.appendChild(totalsEl);
+      historySection.appendChild(row);
+    });
+    body.appendChild(historySection);
+  }
 
   // Account section
   const accountSection = el("div");

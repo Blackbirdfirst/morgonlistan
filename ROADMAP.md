@@ -11,8 +11,8 @@ Living list — status: `[ ]` todo · `[~]` in progress · `[x]` done. Sections 
 **Core behaviour**
 - [x] Define the cycle boundary explicitly — start day/time and end day/time, in a fixed timezone (e.g. Europe/Stockholm)
 - [x] Derive cycle state from timestamps, not from a running timer — must be correct even if the app was closed all week
-- [ ] Cycle states: `active` → `ended / ready to redeem` → `reset` → new `active`
-- [ ] Freeze earning once the cycle has ended (no new candy until the new cycle starts)
+- [x] Cycle states: `active` → `ended / ready to redeem` → `reset` → new `active` — not modelled as named states; the same timestamp-derived boundary already produces each of them (the "Utdelat" banner is the ready-to-redeem state, its absence is active/reset)
+- [x] Freeze earning once the cycle has ended (no new candy until the new cycle starts) — inherent in the timestamp bucketing: a completion always falls into whichever week its own timestamp is in, so there's nothing to separately freeze
 
 **Configurable reset day**
 - [x] Let a parent change the reset day from Saturday to any other weekday, in parent mode
@@ -24,27 +24,27 @@ Living list — status: `[ ]` todo · `[~]` in progress · `[x]` done. Sections 
 - [x] Update the copy in notifications and the cycle indicator to use the chosen day, not hard-coded "Saturday" (indicator and landing copy done; notification copy follows with §8)
 
 **Redeem step**
-- [ ] "Use your candy" screen at cycle end: shows total earned, lets the user cash it in
+- [x] "Use your candy" screen at cycle end: shows total earned, lets the user cash it in — the "Förra veckan: N — Utdelat" banner on each kid's card covers this; no separate screen needed
 - [x] Decide whether redeeming is a manual confirm ("I got my candy") or automatic at reset — decided: manual, per kid, via "Utdelat" behind the parental gate (2026-09-21)
 - [x] Decide the carry-over rule — decided: unspent reward is lost at the reset (2026-09-21)
 
 **Notifications**
-- [ ] Cycle-end notification: "The week is done — you have X candies to use today"
-- [ ] Reset notification / in-app message: "New cycle started, candy is back to 0"
+- [x] Cycle-end notification: "The week is done — you have X candies to use today" — generic text, not a live count (see §8/CLAUDE.md); a live count isn't possible in a notification scheduled in advance
+- [x] Reset notification / in-app message: "New cycle started, candy is back to 0" — folded into the single week-end notification above rather than a second message right after it
 - [ ] Optional heads-up the day before ("1 day left to earn")
-- [ ] Handle notification permission being denied — the same info must be visible in-app
+- [x] Handle notification permission being denied — the same info must be visible in-app — reuses the same permission handling already built for §8
 
 **Visibility in the UI**
 - [x] Persistent cycle indicator: which day of the cycle, days remaining, progress — days remaining shown in each kid card's header
 - [x] Clear "cycle ended" banner/state so the reset never looks like lost data or a bug
-- [ ] Cycle history: candies earned and used per past cycle
+- [x] Cycle history: candies earned and used per past cycle — "Tidigare veckor" in Parent mode, last 8 completed weeks
 
 **Edge cases**
-- [ ] Task completed after the cutoff — which cycle does it count toward?
-- [ ] Retroactive edits/undo of a task after the cycle closed
-- [ ] Timezone changes and DST shifts across the boundary
-- [ ] Multiple users/profiles — do they share one cycle or run independently?
-- [ ] First-ever cycle and a cycle where zero candy was earned
+- [x] Task completed after the cutoff — which cycle does it count toward? — already correct: a completion is bucketed by its own timestamp, not by when the screen happens to render
+- [x] Retroactive edits/undo of a task after the cycle closed — moot: the checklist only ever shows *today*, there's no UI path to view or edit a past day at all
+- [x] Timezone changes and DST shifts across the boundary — verified: boundaries are computed in calendar days, not fixed millisecond offsets, so a clock change can't move one off its wall-clock time
+- [x] Multiple users/profiles — do they share one cycle or run independently? — decided (already the behaviour): the reset day/time is family-wide, but each kid's balance and history are independent
+- [x] First-ever cycle and a cycle where zero candy was earned — verified: both just produce empty results (no summary banner, empty history rows), no special-casing needed
 
 ## 2. Easier startup configuration (first-run setup)
 

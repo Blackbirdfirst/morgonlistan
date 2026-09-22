@@ -411,6 +411,30 @@ button {
   transition: transform 0.15s ease;
 }
 
+.history-row {
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.history-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.history-chip {
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 10px;
+}
+
+.history-empty {
+  font-size: 13px;
+  color: #ADB5BD;
+}
+
 .list-row.dragging {
   box-shadow: 0 8px 20px rgba(0,0,0,0.18);
   transition: none;
