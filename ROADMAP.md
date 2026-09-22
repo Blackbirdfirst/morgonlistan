@@ -22,6 +22,7 @@ Living list — status: `[ ]` todo · `[~]` in progress · `[x]` done. Sections 
 - [x] Never silently wipe earned candy when the setting changes — nothing is wiped; the change waits for the week's end and a dialog explains it — warn first if the change would end the cycle early
 - [x] Make the current setting visible in the app ("resets on Saturdays"), so the reset is never a surprise
 - [x] Update the copy in notifications and the cycle indicator to use the chosen day, not hard-coded "Saturday" (indicator and landing copy done; notification copy follows with §8)
+- [x] "End the week as soon as the morning list is done" — decided (2026-09-22): per kid, not family-wide (one kid finishing doesn't move a sibling's boundary), with Klockslag kept as the fallback in case a morning list never gets finished that day. Opt-in in Parent mode (Sluta tidigt), default off. See `CLAUDE.md`'s "End week early on morning done" for the mechanism.
 
 **Redeem step**
 - [x] "Use your candy" screen at cycle end: shows total earned, lets the user cash it in — the "Förra veckan: N — Utdelat" banner on each kid's card covers this; no separate screen needed
