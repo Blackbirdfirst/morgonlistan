@@ -227,3 +227,17 @@ Deliberately **not** blocking this on the full visual identity system (§4) — 
 - [ ] **Longer-term aspiration, explicitly not scoped yet**: real character/animation work, in the spirit of Duolingo's characters and Klarna's checkout animations (reportedly done by a Swedish design studio) — a genuine quality bar to aim for, not a specific mechanic yet. Bigger than anything else in this app so far (real art/animation, not emoji), and directly overlaps with §12's "fun monster/animal" for the toothbrushing step — worth designing one character system that can serve both rather than two unrelated ones
 - [ ] Test every new celebration on an actual kid before it ships, same rule as icons (brand-guide.md §2) — a "positive" moment that isn't actually fun to a 6-year-old is worse than nothing
 - [ ] Keep it fast: a child does this twice a day, every day — a celebration that's delightful once and tedious by the tenth time is a net loss
+
+## 14. Backend reporting / usage dashboard
+
+**Goal:** visibility into real usage across all families, for the developer's own insight — not an in-app feature for families themselves.
+
+> Prompted by manually cleaning up test signups in Supabase and wanting the same kind of at-a-glance view for actual usage. `families_overview` (see `supabase/schema.sql`) is the first small step — a readable admin-only SQL view — but doesn't yet answer "how many families are actually using this."
+
+- [ ] Total signups, and total *excluding* never-started accounts (no kids ever added) — this session's cleanup queries (zero `kid_count`, or email-pattern-based) are the manual version of this
+- [ ] Active vs inactive: e.g. a family with a completion logged today or yesterday counts as active; define the exact cutoff
+- [ ] Historic growth: signups and active-family count over time, not just a current snapshot
+- [ ] Which default settings get changed, and how often — currency symbol, reward-per-session amount, reset day/time (§1), reminder times (§8) — a signal for which settings actually matter to real families vs which are unused complexity
+- [ ] Decide where this lives: more SQL views like `families_overview` (simplest, no new code, SQL-Editor-only — same access pattern already set up), vs an actual small admin page/screen (more work, but easier to check regularly without hand-writing SQL each time)
+- [ ] If it becomes an admin page rather than raw SQL: needs its own auth story (must not be reachable by an ordinary family account), separate from everything above in this file, which is all about the product itself, not tooling for the developer
+- [ ] Keep it privacy-conscious even though it's developer-only: aggregate counts over exposing individual families' data where a count alone would answer the question
