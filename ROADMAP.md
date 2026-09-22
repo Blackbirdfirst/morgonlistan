@@ -234,10 +234,16 @@ Deliberately **not** blocking this on the full visual identity system (§4) — 
 
 > Prompted by manually cleaning up test signups in Supabase and wanting the same kind of at-a-glance view for actual usage. `families_overview` (see `supabase/schema.sql`) is the first small step — a readable admin-only SQL view — but doesn't yet answer "how many families are actually using this."
 
+**Decided (2026-09-22): two deliberate phases, not built as one project.**
+
+### Phase 1 — SQL views (do this first, low effort)
+More read-only views alongside `families_overview`, SQL-Editor-only (same `revoke ... from anon, authenticated` pattern), no app code and no new auth story needed:
 - [ ] Total signups, and total *excluding* never-started accounts (no kids ever added) — this session's cleanup queries (zero `kid_count`, or email-pattern-based) are the manual version of this
 - [ ] Active vs inactive: e.g. a family with a completion logged today or yesterday counts as active; define the exact cutoff
-- [ ] Historic growth: signups and active-family count over time, not just a current snapshot
 - [ ] Which default settings get changed, and how often — currency symbol, reward-per-session amount, reset day/time (§1), reminder times (§8) — a signal for which settings actually matter to real families vs which are unused complexity
-- [ ] Decide where this lives: more SQL views like `families_overview` (simplest, no new code, SQL-Editor-only — same access pattern already set up), vs an actual small admin page/screen (more work, but easier to check regularly without hand-writing SQL each time)
-- [ ] If it becomes an admin page rather than raw SQL: needs its own auth story (must not be reachable by an ordinary family account), separate from everything above in this file, which is all about the product itself, not tooling for the developer
 - [ ] Keep it privacy-conscious even though it's developer-only: aggregate counts over exposing individual families' data where a count alone would answer the question
+
+### Phase 2 — a real admin page (only once the numbers justify it)
+Explicitly deferred until the app has grown enough that hand-run SQL queries stop being convenient — not scheduled now:
+- [ ] Historic growth: signups and active-family count over time, not just a current snapshot (much easier with a real page/stored history than ad-hoc SQL)
+- [ ] Needs its own auth story (must not be reachable by an ordinary family account), separate from everything else in this file, which is all about the product itself, not tooling for the developer
