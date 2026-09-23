@@ -18,8 +18,8 @@ const DEFAULT_EVENING_TASKS = [
   { id: "e5", name: "Sängen", emoji: "🛏️" },
 ];
 
-// Evening list shows 18:00-03:59; morning list shows 04:00-17:59.
-const EVENING_START_HOUR = 18;
+// Evening list shows 12:00-03:59; morning list shows 04:00-11:59.
+const EVENING_START_HOUR = 12;
 const MORNING_START_HOUR = 4;
 
 // A muted hue wheel — same saturation/lightness throughout, only the hue
@@ -1294,6 +1294,19 @@ function render() {
   }
 }
 
+// The main screen is drawn once, so an app left open (or backgrounded) across
+// the morning→evening switch or midnight would keep showing the old list and
+// yesterday's ticks. Redraw when the period or date has moved on — checked on
+// return to the app and on a slow timer — but never over an open dialog.
+let renderedMain = null; // { period, date } of the main screen as last drawn
+function refreshIfStale() {
+  if (!state || route.screen !== "main" || !renderedMain || state.kids.length === 0) return;
+  if (document.querySelector(".modal-overlay")) return;
+  if (renderedMain.period !== getCurrentPeriod() || renderedMain.date !== todayStr()) render();
+}
+document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshIfStale(); });
+setInterval(refreshIfStale, 30000);
+
 function el(tag, className, html) {
   const e = document.createElement(tag);
   if (className) e.className = className;
@@ -1500,6 +1513,7 @@ function renderMain() {
   const screen = el("div", "screen");
   const period = getCurrentPeriod();
   const tasks = getActiveTasks(period);
+  renderedMain = { period, date: todayStr() };
 
   const topBar = el("div", "top-bar");
   const periodIcon = period === "evening" ? "🌙" : "☀️";
