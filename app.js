@@ -14,7 +14,7 @@ const DEFAULT_EVENING_TASKS = [
   { id: "e1", name: "Duscha", emoji: "🚿" },
   { id: "e2", name: "Tandborstning", emoji: "🪥" },
   { id: "e3", name: "Toalett", emoji: "🚽" },
-  { id: "e4", name: "Pyjamas", emoji: "😴" },
+  { id: "e4", name: "Pyjamas", emoji: "👕" },
   { id: "e5", name: "Sängen", emoji: "🛏️" },
 ];
 
@@ -58,7 +58,7 @@ const TASK_EMOJIS = [
   "🍳","🥣","🥪","🧃","👕","👖","🧦","🩳",
   "🦷","🪥","💇","🧴","🚿","🛁","🎒","📚",
   "✏️","🧥","🧤","🧣","👟","👢","🛏️","⏰",
-  "☀️","🌙","😴","🐶","🚗","🎵","⭐","🎁","🖐️",
+  "☀️","🌙","🐶","🚗","🎵","⭐","🎁","🖐️",
   "🧸","🎈","🧹","🍽️","🚽","🏃","🧻","🥤",
 ];
 
@@ -101,6 +101,11 @@ function normalizeState(parsed) {
   if (!parsed.eveningTasks) parsed.eveningTasks = DEFAULT_EVENING_TASKS.slice();
   if (!parsed.kids) parsed.kids = [];
   if (!parsed.tasks) parsed.tasks = DEFAULT_TASKS.slice();
+  // The old default Pyjamas icon 🩱 reads as a swimsuit to a child. Replace
+  // exactly that known-bad pair and nothing else a family has chosen.
+  [parsed.tasks, parsed.eveningTasks].forEach(list => list.forEach(t => {
+    if (t.name === "Pyjamas" && t.emoji === "🩱") t.emoji = "👕";
+  }));
   if (!parsed.completions) parsed.completions = [];
   if (!parsed.settledWeeks) parsed.settledWeeks = {};
   if (!parsed.resetSchedule || !parsed.resetSchedule.length) parsed.resetSchedule = [{ effectiveAt: 0, day: DEFAULT_RESET_DAY, hour: DEFAULT_RESET_HOUR, minute: 0 }];
@@ -1503,12 +1508,19 @@ function buildWeekSummary(kid) {
 }
 
 function buildRewardCard(kid, tasks, celebrating = allTasksDoneToday(kid.id, tasks), weekEndedEarly = false) {
-  const card = el("div", "reward-card" + (celebrating ? " celebrating" : ""));
+  const card = el("div", "reward-card");
+  // One fixed-height line, same font/size/colour before and after: the tick
+  // slides in and the words cross-fade (see .reward-line in style.css), so
+  // finishing a list never changes the text's look or moves the jar.
   card.innerHTML = `
     ${buildRewardJar(weeklyBalance(kid.id), state.currencySymbol)}
-    ${celebrating
-      ? `<div class="celebration-line1">${weekEndedEarly ? "Veckan är klar! 🎊" : "Allt klart för idag! 🎉"}</div>`
-      : `<div class="reward-label">denna vecka</div>`}
+    <div class="reward-line${celebrating ? " done" : ""}">
+      <span class="reward-tick"><i>✓</i></span>
+      <span class="reward-words">
+        <span class="rw-rest">Denna vecka</span>
+        <span class="rw-done">${weekEndedEarly ? "Veckan är klar" : "Allt klart för idag"}</span>
+      </span>
+    </div>
   `;
   return card;
 }
@@ -1677,7 +1689,7 @@ function toggleTask(kid, task, cardEl, panelEl, tasks, period) {
     state.completions.push({ kidId: kid.id, taskId: sessionRewardId, date: today, amount: state.rewardPerSession, timestamp: Date.now() });
     const justEndedWeek = period === "morning" ? maybeEndWeekEarly(kid.id) : false;
     saveState();
-    rewardCardEl.replaceWith(buildRewardCard(kid, tasks, false));
+    rewardCardEl.replaceWith(buildRewardCard(kid, tasks, false, justEndedWeek));
     if (justEndedWeek) {
       const weekLeftEl = panelEl.querySelector(".week-left");
       if (weekLeftEl) weekLeftEl.textContent = weekDaysLeftText(kid.id);
@@ -1691,7 +1703,9 @@ function toggleTask(kid, task, cardEl, panelEl, tasks, period) {
     }
     setTimeout(() => {
       playCheer();
-      panelEl.querySelector(".reward-card").replaceWith(buildRewardCard(kid, tasks, true, justEndedWeek));
+      // Same card, not a new one, so the line's tick and cross-fade animate.
+      const line = panelEl.querySelector(".reward-line");
+      if (line && allTasksDoneToday(kid.id, tasks)) line.classList.add("done");
       launchConfetti();
     }, 350);
   } else if (!nowAllDone && hasSessionReward) {

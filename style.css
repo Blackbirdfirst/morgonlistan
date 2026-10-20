@@ -261,25 +261,48 @@ button {
   border-radius: 10px;
 }
 
-.reward-label {
-  font-size: 12px;
+/* One line under the jar. Same font, size and colour before and after a
+   finished list; only the words and a small tick change. Fixed height, so
+   the jar never moves when it switches. */
+.reward-line {
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  color: #868E96;
+  color: #2B2D42;
 }
-
-.reward-card.celebrating {
-  border: 3px solid var(--celebration-accent, #F0654A);
+.reward-tick {
+  width: 0;
+  height: 18px;
+  opacity: 0;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: width 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
 }
-
-.celebration-line1 {
-  font-family: 'Fraunces', Georgia, serif;
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--celebration-accent, #F0654A);
-  margin-top: 2px;
+.reward-tick i {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--celebration-accent, #F0654A);
+  color: white;
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+.reward-line.done .reward-tick { width: 18px; opacity: 1; margin-right: 7px; }
+.reward-words { display: inline-grid; }
+.reward-words span { grid-area: 1 / 1; white-space: nowrap; transition: opacity 0.3s ease; }
+.rw-done { opacity: 0; }
+.reward-line.done .rw-rest { opacity: 0; }
+.reward-line.done .rw-done { opacity: 1; }
 
 @keyframes rewardPop {
   0% { transform: scale(0.92); }

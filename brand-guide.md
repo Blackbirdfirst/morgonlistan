@@ -17,7 +17,7 @@ The whole product is built around one constraint: **the primary user often can't
 
 In practice: one emoji per task, always. A short label underneath it for the parent and the older child, but the icon carries the meaning on its own. Big, high-contrast tap targets. No task is ever explained in a sentence — if it needs a sentence, it needs a clearer icon instead.
 
-**Learned the hard way:** the evening "Pyjamas" task used 🩱, which reads as a swimsuit, not pyjamas. A 7-year-old noticed immediately and made fun of it, and a 5-year-old later did the same ("should I put on a swimsuit?") because the family's saved list still held the old icon. There is no pyjama emoji, so the default is now 😴 (sleep, not clothing). The 🩳 in the icon picker is a similar risk. **Rule: test every icon on an actual kid before it ships.** An adult skimming a list of emoji will wave through ambiguity that a child staring at the actual icon every evening will not.
+**Learned the hard way:** the evening "Pyjamas" task used 🩱, which reads as a swimsuit, not pyjamas. A 7-year-old noticed immediately and made fun of it, and a 5-year-old later did the same ("should I put on a swimsuit?") because the family's saved list still held the old icon. There is no pyjama emoji, so the default is now 👕, the same as Kläder (it is clothes, and nothing else reads as pyjamas). A family whose saved list still has the old 🩱 on a task named exactly "Pyjamas" is migrated to 👕 on load. The 🩳 in the icon picker is a similar risk. **Rule: test every icon on an actual kid before it ships.** An adult skimming a list of emoji will wave through ambiguity that a child staring at the actual icon every evening will not.
 
 ## 3. Voice & copy
 
