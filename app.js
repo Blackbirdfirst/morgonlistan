@@ -1507,9 +1507,8 @@ function buildRewardCard(kid, tasks, celebrating = allTasksDoneToday(kid.id, tas
   card.innerHTML = `
     ${buildRewardJar(weeklyBalance(kid.id), state.currencySymbol)}
     ${celebrating
-      ? `<div class="celebration-line1">Allt klart för idag! 🎉</div>`
+      ? `<div class="celebration-line1">${weekEndedEarly ? "Veckan är klar! 🎊" : "Allt klart för idag! 🎉"}</div>`
       : `<div class="reward-label">denna vecka</div>`}
-    ${weekEndedEarly ? `<div class="reward-label">Och veckan är klar — bra jobbat! 🎊</div>` : ``}
   `;
   return card;
 }
