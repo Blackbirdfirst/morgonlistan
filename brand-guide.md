@@ -58,15 +58,15 @@ One muted hue wheel, same saturation and lightness throughout — only the hue t
 
 ### The splashes (`SPLASH_COLORS` in `app.js`)
 
-Shared across every kid, never a card's identity — only ever the answer to "what just happened." Only the first two are wired to a real product moment today; the rest are reserved for features that don't exist yet, including `Berry Pop`, which currently lives only in the App Store icon.
+Shared across every kid, never a card's identity — only ever the answer to "what just happened." The first two are wired to real product moments (a checked task, a completed session). Sky Spark, Grass Pop and Berry Pop appear only in the full-screen confetti when a whole list is done — together with Sunshine and Coral Pop they are the five colours of the App Store icon.
 
 | Name | Hex | Role |
 |---|---|---|
 | Sunshine | `#FFC93C` | a single task checked off (`SPLASH_COLORS.tick`) |
 | Coral Pop | `#F0654A` | a session fully completed (`SPLASH_COLORS.reward`) |
-| Sky Spark | `#4FC1E0` | reserved — full list done |
-| Grass Pop | `#6FBE6A` | reserved — streak milestone |
-| Berry Pop | `#E0568C` | reserved — used today only in the App Store icon |
+| Sky Spark | `#4FC1E0` | confetti when a whole list is done (`SPLASH_COLORS.sky`) |
+| Grass Pop | `#6FBE6A` | confetti when a whole list is done (`SPLASH_COLORS.grass`) |
+| Berry Pop | `#E0568C` | confetti when a whole list is done (`SPLASH_COLORS.berry`); also in the App Store icon |
 
 ## 5. Type
 

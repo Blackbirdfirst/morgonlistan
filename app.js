@@ -47,6 +47,11 @@ const KID_COLORS = [
 const SPLASH_COLORS = {
   tick: "#FFC93C",   // sunshine — a single task checked off
   reward: "#F0654A", // coral pop — a session fully completed
+  // The rest of the App Store icon's colours; used with the two above, and
+  // only, for the full-screen confetti when a whole list is done.
+  sky: "#4FC1E0",
+  grass: "#6FBE6A",
+  berry: "#E0568C",
 };
 
 const TASK_EMOJIS = [
@@ -1588,6 +1593,59 @@ function renderKidPanel(kid, tasks, period = getCurrentPeriod()) {
   return panel;
 }
 
+// Confetti across the whole screen when a list is finished, in the five
+// colours of the app icon. One canvas, no library; skipped entirely for
+// reduced motion. (Proven out in the monsters trial, which was dropped —
+// this part was kept.)
+function launchConfetti() {
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const canvas = document.createElement("canvas");
+  canvas.className = "confetti-canvas";
+  const dpr = window.devicePixelRatio || 1;
+  const W = window.innerWidth, H = window.innerHeight;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext("2d");
+  ctx.scale(dpr, dpr);
+  const colors = [SPLASH_COLORS.reward, SPLASH_COLORS.tick, SPLASH_COLORS.sky, SPLASH_COLORS.grass, SPLASH_COLORS.berry];
+  const pieces = Array.from({ length: 150 }, () => ({
+    x: Math.random() * W,
+    y: -20 - Math.random() * H * 0.6,
+    w: 6 + Math.random() * 7,
+    h: 9 + Math.random() * 8,
+    vx: (Math.random() - 0.5) * 2.2,
+    vy: 2 + Math.random() * 3.2,
+    rot: Math.random() * Math.PI * 2,
+    vr: (Math.random() - 0.5) * 0.3,
+    sway: Math.random() * Math.PI * 2,
+    color: colors[Math.floor(Math.random() * colors.length)],
+    round: Math.random() < 0.3,
+  }));
+  const started = performance.now();
+  const DURATION = 4300;
+  function frame(now) {
+    const t = now - started;
+    ctx.clearRect(0, 0, W, H);
+    ctx.globalAlpha = t > DURATION - 700 ? Math.max(0, (DURATION - t) / 700) : 1;
+    for (const p of pieces) {
+      p.sway += 0.05;
+      p.x += p.vx + Math.sin(p.sway) * 0.8;
+      p.y += p.vy;
+      p.rot += p.vr;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle = p.color;
+      if (p.round) { ctx.beginPath(); ctx.arc(0, 0, p.w / 2, 0, Math.PI * 2); ctx.fill(); }
+      else ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      ctx.restore();
+    }
+    if (t < DURATION) requestAnimationFrame(frame); else canvas.remove();
+  }
+  requestAnimationFrame(frame);
+}
+
 function toggleTask(kid, task, cardEl, panelEl, tasks, period) {
   const today = todayStr();
   const existingIndex = state.completions.findIndex(
@@ -1635,6 +1693,7 @@ function toggleTask(kid, task, cardEl, panelEl, tasks, period) {
     setTimeout(() => {
       playCheer();
       panelEl.querySelector(".reward-card").replaceWith(buildRewardCard(kid, tasks, true, justEndedWeek));
+      launchConfetti();
     }, 350);
   } else if (!nowAllDone && hasSessionReward) {
     state.completions = state.completions.filter(
