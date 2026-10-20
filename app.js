@@ -14,7 +14,7 @@ const DEFAULT_EVENING_TASKS = [
   { id: "e1", name: "Duscha", emoji: "🚿" },
   { id: "e2", name: "Tandborstning", emoji: "🪥" },
   { id: "e3", name: "Toalett", emoji: "🚽" },
-  { id: "e4", name: "Pyjamas", emoji: "🛌" },
+  { id: "e4", name: "Pyjamas", emoji: "😴" },
   { id: "e5", name: "Sängen", emoji: "🛏️" },
 ];
 
@@ -58,7 +58,7 @@ const TASK_EMOJIS = [
   "🍳","🥣","🥪","🧃","👕","👖","🧦","🩳",
   "🦷","🪥","💇","🧴","🚿","🛁","🎒","📚",
   "✏️","🧥","🧤","🧣","👟","👢","🛏️","⏰",
-  "☀️","🌙","🐶","🚗","🎵","⭐","🎁","🖐️",
+  "☀️","🌙","😴","🐶","🚗","🎵","⭐","🎁","🖐️",
   "🧸","🎈","🧹","🍽️","🚽","🏃","🧻","🥤",
 ];
 
